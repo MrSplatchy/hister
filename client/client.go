@@ -63,11 +63,39 @@ func checkStatus(resp *http.Response) error {
 		return nil
 	}
 	body, _ := io.ReadAll(resp.Body)
-	msg := strings.TrimSpace(string(body))
-	if msg == "" {
-		msg = resp.Status
+	detail := strings.TrimSpace(string(body))
+
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		msg := "authentication required: the server requires an access token"
+		if detail != "" {
+			msg += " (" + detail + ")"
+		}
+		return fmt.Errorf("%s\nProvide one with --token / -t or set access_token in your config file", msg)
+	case http.StatusForbidden:
+		msg := "access denied: the token is invalid or does not have permission for this operation"
+		if detail != "" {
+			msg += " (" + detail + ")"
+		}
+		return fmt.Errorf("%s\nCheck the token with --token / -t or verify the user's permissions on the server", msg)
+	case http.StatusNotFound:
+		msg := "server not reachable at the configured URL"
+		if detail != "" {
+			msg += ": " + detail
+		}
+		return fmt.Errorf("%s\nVerify the server address with --server-url / -u", msg)
+	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		msg := fmt.Sprintf("server error (%d)", resp.StatusCode)
+		if detail != "" {
+			msg += ": " + detail
+		}
+		return fmt.Errorf("%s\nCheck the server logs for details", msg)
+	default:
+		if detail == "" {
+			detail = resp.Status
+		}
+		return fmt.Errorf("unexpected response (%d): %s", resp.StatusCode, detail)
 	}
-	return fmt.Errorf("invalid status code (%d): %s", resp.StatusCode, msg)
 }
 
 func closeBody(resp *http.Response, errp *error) {
