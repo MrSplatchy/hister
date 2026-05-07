@@ -252,13 +252,13 @@
 </script>
 
 <svelte:head>
-  <title>Hister Beta - Rules</title>
+  <title>Hister - Rules</title>
 </svelte:head>
 
 <div class="flex flex-1 flex-col gap-8 overflow-y-auto px-6 py-8 md:gap-10 md:px-12 md:py-12">
   <!-- Section Header -->
   <div class="flex flex-col gap-4">
-    <PageHeader color="hister-coral" size="lg">RULES & ALIASES</PageHeader>
+    <PageHeader color="hister-coral" size="lg" class="uppercase">Rules &amp; Aliases</PageHeader>
     <p class="font-inter text-text-brand-secondary max-w-175 text-base leading-relaxed md:text-lg">
       Configure how Hister indexes and searches your browsing history.
     </p>
