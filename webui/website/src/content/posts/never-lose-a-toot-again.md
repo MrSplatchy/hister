@@ -3,6 +3,7 @@ date: '2026-05-09T10:00:00+00:00'
 draft: false
 title: 'Never Lose a Toot Again: Full-Text Search for Your Mastodon Feed'
 description: 'Mastodon search is limited. Here is how Hister automatically indexes every toot you see and lets you find them in milliseconds.'
+image: 'toot_alias_results.png'
 ---
 
 Mastodon is a fantastic platform but it's built-in search provides limited options to retrieve toots.
