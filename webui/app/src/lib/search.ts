@@ -29,6 +29,7 @@ export interface SearchResult {
   text?: string;
   favicon?: string;
   added?: number;
+  label?: string;
 }
 
 export interface SemanticHit {

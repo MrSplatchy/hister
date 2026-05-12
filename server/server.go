@@ -931,6 +931,33 @@ func serveAddPDF(c *webContext) {
 	c.Response.WriteHeader(http.StatusCreated)
 }
 
+func serveUpdateLabel(c *webContext) {
+	var req struct {
+		URL   string `json:"url"`
+		Label string `json:"label"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		http.Error(c.Response, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.URL == "" {
+		http.Error(c.Response, "missing url", http.StatusBadRequest)
+		return
+	}
+	doc := indexer.GetByURLAndUser(req.URL, c.UserID)
+	if doc == nil {
+		http.Error(c.Response, "document not found", http.StatusNotFound)
+		return
+	}
+	doc.Label = req.Label
+	if err := indexer.Save(doc); err != nil {
+		log.Error().Err(err).Str("url", req.URL).Msg("failed to save label")
+		serve500(c)
+		return
+	}
+	c.JSON(map[string]any{"ok": true})
+}
+
 func serveHistory(c *webContext) {
 	if c.Request.URL.Query().Get("opened") == "true" {
 		var lastID uint

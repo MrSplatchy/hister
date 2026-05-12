@@ -188,6 +188,18 @@ func init() {
 			},
 		},
 		{
+			Name:         "Update label",
+			Path:         "/api/label",
+			Method:       POST,
+			CSRFRequired: true,
+			Handler:      serveUpdateLabel,
+			Description:  "Update (or clear) the user-defined label of a stored document",
+			JSONSchema: []*JSONSchemaField{
+				{Name: "url", Type: "string", Required: true, Description: "URL of the document to label"},
+				{Name: "label", Type: "string", Required: false, Description: "New label value; pass empty string to clear"},
+			},
+		},
+		{
 			Name:         "Get document",
 			Path:         "/api/document",
 			Method:       GET,

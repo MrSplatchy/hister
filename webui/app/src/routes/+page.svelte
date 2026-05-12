@@ -49,6 +49,7 @@
     Trash2,
     Pin,
     PinOff,
+    Tag,
     Download,
     ExternalLink,
     History,
@@ -148,6 +149,12 @@
   let showDeleteAllConfirm = $state(false);
   let deleteError: string | null = $state(null);
   let deleteErrorTimer: any = null;
+
+  let labelInput = $state('');
+  let labelInputUrl = $state('');
+  let labelMessage: string | null = $state(null);
+  let labelError = $state(false);
+  let labelOverrides = $state<Map<string, string | undefined>>(new Map());
 
   let recentSearches: string[] = $state([]);
   let rulesCount = $state(0);
@@ -537,6 +544,25 @@
 
   function cancelDeleteAll() {
     showDeleteAllConfirm = false;
+  }
+
+  async function updateLabel(url: string, label: string) {
+    labelMessage = null;
+    labelError = false;
+    const res = await apiFetch('/label', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, label }),
+    });
+    if (res.ok) {
+      labelMessage = label ? 'Label saved.' : 'Label cleared.';
+      labelError = false;
+      labelOverrides.set(url, label || undefined);
+      labelOverrides = new Map(labelOverrides);
+    } else {
+      labelMessage = 'Failed to save label.';
+      labelError = true;
+    }
   }
 
   // Convert a file:// URL to a server-side /api/file?path= URL for in-browser viewing.
@@ -1558,7 +1584,19 @@
                         >
                           {r.title || '*title*'}
                         </a>
-                        <DropdownMenu.Root>
+                        <DropdownMenu.Root
+                          onOpenChange={(open) => {
+                            if (!open) return;
+                            actionsMessage = null;
+                            actionsError = false;
+                            labelInputUrl = r.url;
+                            labelInput = labelOverrides.has(r.url)
+                              ? (labelOverrides.get(r.url) ?? '')
+                              : (r.label ?? '');
+                            labelMessage = null;
+                            labelError = false;
+                          }}
+                        >
                           <DropdownMenu.Trigger>
                             {#snippet child({ props })}
                               <Button
@@ -1566,10 +1604,6 @@
                                 variant="ghost"
                                 size="icon-sm"
                                 class="text-text-brand-muted hover:text-text-brand shrink-0 cursor-pointer"
-                                onclick={() => {
-                                  actionsMessage = null;
-                                  actionsError = false;
-                                }}
                               >
                                 <MoreVertical class="size-4" />
                               </Button>
@@ -1600,6 +1634,40 @@
                                 onAddSkipRule={(type, deleteMatches) =>
                                   addSkipRuleForResult(r.url, r.domain, type, deleteMatches)}
                               />
+                              <hr />
+                              <div class="space-y-2">
+                                <p
+                                  class="font-outfit mb-1 text-xs font-bold tracking-widest uppercase"
+                                >
+                                  Label:
+                                </p>
+                                <div class="flex items-center gap-2">
+                                  <Input
+                                    bind:value={labelInput}
+                                    placeholder="Add a label…"
+                                    size="sm"
+                                    class="font-inter border-border-brand-muted flex-1 border-[2px] text-sm shadow-none focus-visible:ring-0"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-[2px] text-xs"
+                                    onclick={() => updateLabel(r.url, labelInput)}
+                                  >
+                                    <Tag class="size-3.5" />
+                                    Save
+                                  </Button>
+                                </div>
+                                {#if labelMessage && labelInputUrl === r.url}
+                                  <p
+                                    class="font-inter text-xs {labelError
+                                      ? 'text-hister-rose'
+                                      : 'text-hister-tea'}"
+                                  >
+                                    {labelMessage}
+                                  </p>
+                                {/if}
+                              </div>
                               {#if actionsMessage}
                                 <p
                                   class="font-inter text-xs {actionsError
@@ -1623,6 +1691,17 @@
                           class="bg-hister-teal/10 text-hister-teal h-4 border-0 px-1.5 py-0"
                           >pinned</Badge
                         >
+                        {#if labelOverrides.has(r.url) ? labelOverrides.get(r.url) : r.label}
+                          {@const displayLabel =
+                            (labelOverrides.has(r.url) ? labelOverrides.get(r.url) : r.label) || ''}
+                          <Badge
+                            variant="secondary"
+                            class="bg-hister-teal/20 max-w-[8rem] shrink-0 truncate border-0 px-1.5 py-0"
+                            title={displayLabel}
+                          >
+                            <Tag class="mr-0.5 size-2.5 shrink-0" />{displayLabel}
+                          </Badge>
+                        {/if}
                         <Button
                           data-readable
                           variant="link"
@@ -1705,7 +1784,19 @@
                         >
                           {r.title || '*title*'}
                         </a>
-                        <DropdownMenu.Root>
+                        <DropdownMenu.Root
+                          onOpenChange={(open) => {
+                            if (!open) return;
+                            actionsMessage = null;
+                            actionsError = false;
+                            labelInputUrl = r.url;
+                            labelInput = labelOverrides.has(r.url)
+                              ? (labelOverrides.get(r.url) ?? '')
+                              : (r.label ?? '');
+                            labelMessage = null;
+                            labelError = false;
+                          }}
+                        >
                           <DropdownMenu.Trigger>
                             {#snippet child({ props })}
                               <Button
@@ -1713,10 +1804,6 @@
                                 variant="ghost"
                                 size="icon-sm"
                                 class="text-text-brand-muted hover:text-text-brand shrink-0 cursor-pointer"
-                                onclick={() => {
-                                  actionsMessage = null;
-                                  actionsError = false;
-                                }}
                               >
                                 <MoreVertical class="size-4" />
                               </Button>
@@ -1757,6 +1844,40 @@
                                   addSkipRuleForResult(r.url, r.domain, type, deleteMatches)}
                               />
                               <hr />
+                              <div class="space-y-2">
+                                <p
+                                  class="font-outfit mb-1 text-xs font-bold tracking-widest uppercase"
+                                >
+                                  Label:
+                                </p>
+                                <div class="flex items-center gap-2">
+                                  <Input
+                                    bind:value={labelInput}
+                                    placeholder="Add a label…"
+                                    size="sm"
+                                    class="font-inter border-border-brand-muted focus-visible:border-hister-amber flex-1 border-[2px] text-sm shadow-none focus-visible:ring-0"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-[2px] text-xs"
+                                    onclick={() => updateLabel(r.url, labelInput)}
+                                  >
+                                    <Tag class="size-3.5" />
+                                    Save
+                                  </Button>
+                                </div>
+                                {#if labelMessage && labelInputUrl === r.url}
+                                  <p
+                                    class="font-inter text-xs {labelError
+                                      ? 'text-hister-rose'
+                                      : 'text-hister-teal'}"
+                                  >
+                                    {labelMessage}
+                                  </p>
+                                {/if}
+                              </div>
+                              <hr />
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1789,6 +1910,17 @@
                             class="font-inter text-text-brand-muted text-xs whitespace-nowrap md:text-sm"
                             title={formatTimestamp(r.added)}>· {formatRelativeTime(r.added)}</span
                           >
+                        {/if}
+                        {#if labelOverrides.has(r.url) ? labelOverrides.get(r.url) : r.label}
+                          {@const displayLabel =
+                            (labelOverrides.has(r.url) ? labelOverrides.get(r.url) : r.label) || ''}
+                          <Badge
+                            variant="secondary"
+                            class="bg-hister-teal/20 h-4 max-w-[8rem] shrink-0 truncate border-0 px-1.5 py-0"
+                            title={displayLabel}
+                          >
+                            <Tag class="mr-0.5 size-2.5 shrink-0" />{displayLabel}
+                          </Badge>
                         {/if}
                         <Button
                           data-readable
