@@ -330,8 +330,8 @@
             <Link2 class="size-6 text-white" />
           </div>
           <div class="flex flex-col gap-1">
-            <Card.Title class="font-space text-xl font-extrabold tracking-[1px] text-white"
-              >SEARCH ALIASES</Card.Title
+            <Card.Title class="font-space text-xl font-extrabold tracking-[1px] text-white uppercase"
+              >Search aliases</Card.Title
             >
             <Card.Description class="font-inter text-sm text-white/70"
               >{Object.keys(rules.aliases).length} aliases configured</Card.Description
@@ -364,10 +364,10 @@
             </div>
             <Button
               type="submit"
-              class="bg-hister-indigo font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white"
+              class="bg-hister-indigo font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white uppercase"
             >
               <Plus class="size-4 shrink-0" />
-              ADD
+              Add
             </Button>
           </form>
         </div>
@@ -381,12 +381,12 @@
                   class="bg-muted-surface border-brutal-border hover:bg-muted-surface border-b-[3px]"
                 >
                   <Table.Head
-                    class="font-space text-text-brand-muted h-auto w-35 px-5 py-3 text-xs font-bold tracking-[1px]"
-                    >KEYWORD</Table.Head
+                    class="font-space text-text-brand-muted h-auto w-35 px-5 py-3 text-xs font-bold tracking-[1px] uppercase"
+                    >Keyword</Table.Head
                   >
                   <Table.Head
-                    class="font-space text-text-brand-muted h-auto px-5 py-3 text-xs font-bold tracking-[1px]"
-                    >EXPANDS TO</Table.Head
+                    class="font-space text-text-brand-muted h-auto px-5 py-3 text-xs font-bold tracking-[1px] uppercase"
+                    >Expands to</Table.Head
                   >
                   <Table.Head class="h-auto w-10 px-5 py-3"></Table.Head>
                 </Table.Row>
@@ -558,8 +558,8 @@
             <Shield class="size-6 text-white" />
           </div>
           <div class="flex flex-col gap-1">
-            <Card.Title class="font-space text-xl font-extrabold tracking-[1px] text-white"
-              >INDEXING RULES</Card.Title
+            <Card.Title class="font-space text-xl font-extrabold tracking-[1px] text-white uppercase"
+              >Indexing rules</Card.Title
             >
             <Card.Description class="font-inter text-sm text-white/70"
               >{ruleRows.length} rules configured · patterns use
@@ -588,18 +588,18 @@
                 bind:value={newRuleType}
                 class="bg-card-surface border-brutal-border font-space text-text-brand h-10 w-25 shrink-0 cursor-pointer appearance-none border-[3px] px-3 text-center text-xs font-bold tracking-[0.5px] outline-none md:w-27.5"
               >
-                <option value="skip">SKIP</option>
-                <option value="priority">PRIORITY</option>
-                <option value="versioning">VERSION</option>
+                <option value="skip">skip</option>
+                <option value="priority">priority</option>
+                <option value="versioning">version</option>
               </select>
             </div>
             <Button
               type="button"
               onclick={addRule}
-              class="bg-hister-coral font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white"
+              class="bg-hister-coral font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white uppercase"
             >
               <Plus class="size-4 shrink-0" />
-              ADD
+              Add
             </Button>
           </div>
         </div>
@@ -613,12 +613,12 @@
                   class="bg-muted-surface border-brutal-border hover:bg-muted-surface border-b-[3px]"
                 >
                   <Table.Head
-                    class="font-space text-text-brand-muted h-auto px-5 py-3 text-xs font-bold tracking-[1px]"
-                    >PATTERN</Table.Head
+                    class="font-space text-text-brand-muted h-auto px-5 py-3 text-xs font-bold tracking-[1px] uppercase"
+                    >Pattern</Table.Head
                   >
                   <Table.Head
-                    class="font-space text-text-brand-muted h-auto w-28 px-5 py-3 text-xs font-bold tracking-[1px]"
-                    >TYPE</Table.Head
+                    class="font-space text-text-brand-muted h-auto w-28 px-5 py-3 text-xs font-bold tracking-[1px] uppercase"
+                    >Type</Table.Head
                   >
                   <Table.Head class="h-auto w-20 px-5 py-3"></Table.Head>
                 </Table.Row>
@@ -643,9 +643,9 @@
                             bind:value={editRuleType}
                             class="bg-card-surface border-brutal-border font-space text-text-brand h-8 w-25 shrink-0 cursor-pointer appearance-none border-[3px] px-3 text-center text-xs font-bold tracking-[0.5px] outline-none"
                           >
-                            <option value="skip">SKIP</option>
-                            <option value="priority">PRIORITY</option>
-                            <option value="versioning">VERSION</option>
+                            <option value="skip">skip</option>
+                            <option value="priority">priority</option>
+                            <option value="versioning">version</option>
                           </select>
                         </div>
                       </Table.Cell>
@@ -677,14 +677,14 @@
                       <Table.Cell class="w-28 px-5 py-3">
                         <Badge
                           variant="default"
-                          class="font-space border-0 px-3 py-1 text-xs font-bold tracking-[0.5px] {row.type ===
+                          class="font-space border-0 px-3 py-1 text-xs font-bold tracking-[0.5px] uppercase {row.type ===
                           'skip'
                             ? 'bg-hister-rose text-white'
                             : row.type === 'priority'
                               ? 'bg-hister-teal text-white'
                               : 'bg-violet-500 text-white'}"
                         >
-                          {row.type === 'skip' ? 'SKIP' : row.type === 'priority' ? 'PRIORITY' : 'VERSION'}
+                          {row.type}
                         </Badge>
                       </Table.Cell>
                       <Table.Cell class="w-20 px-3 py-3">
@@ -730,9 +730,9 @@
                       bind:value={editRuleType}
                       class="bg-card-surface border-brutal-border font-space text-text-brand h-8 w-full cursor-pointer appearance-none border-[3px] px-3 text-xs font-bold tracking-[0.5px] outline-none"
                     >
-                      <option value="skip">SKIP</option>
-                      <option value="priority">PRIORITY</option>
-                      <option value="versioning">VERSION</option>
+                      <option value="skip">skip</option>
+                      <option value="priority">priority</option>
+                      <option value="versioning">version</option>
                     </select>
                   </div>
                   <div class="flex items-center gap-1">
@@ -761,14 +761,14 @@
                   </div>
                   <Badge
                     variant="default"
-                    class="font-space shrink-0 border-0 px-2.5 py-0.5 text-xs font-bold tracking-[0.5px] {row.type ===
+                    class="font-space shrink-0 border-0 px-2.5 py-0.5 text-xs font-bold tracking-[0.5px] uppercase {row.type ===
                     'skip'
                       ? 'bg-hister-rose text-white'
                       : row.type === 'priority'
                         ? 'bg-hister-teal text-white'
                         : 'bg-violet-500 text-white'}"
                   >
-                    {row.type === 'skip' ? 'SKIP' : row.type === 'priority' ? 'PRIORITY' : 'VERSION'}
+                    {row.type}
                   </Badge>
                   <Button
                     variant="ghost"
