@@ -91,7 +91,10 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData.toString(),
       });
-      if (!res.ok) throw new Error('Failed to save rules');
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(body.trim() || 'Failed to save rules');
+      }
       message = 'Rules saved successfully';
       isError = false;
       await loadRules();
@@ -316,14 +319,14 @@
       <Card.Root>
         <Card.Header color="hister-indigo">
           <div class="flex h-12 w-12 shrink-0 items-center justify-center bg-white/20">
-            <Link2 class="size-6 text-white" />
+            <Link2 class="text-background size-6" />
           </div>
           <div class="flex flex-col gap-1">
             <Card.Title
-              class="font-space text-xl font-extrabold tracking-[1px] text-white uppercase"
+              class="font-space text-background text-xl font-extrabold tracking-[1px] uppercase"
               >Search aliases</Card.Title
             >
-            <Card.Description class="font-inter text-sm text-white/70"
+            <Card.Description class="font-inter text-background/70 text-sm"
               >{Object.keys(rules.aliases).length} aliases configured</Card.Description
             >
           </div>
@@ -354,7 +357,7 @@
             </div>
             <Button
               type="submit"
-              class="bg-hister-indigo font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white uppercase"
+              class="bg-hister-indigo font-space border-brutal-border brutal-press text-background h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] uppercase"
             >
               <Plus class="size-4 shrink-0" />
               Add
@@ -477,14 +480,14 @@
       <Card.Root>
         <Card.Header color="hister-coral">
           <div class="flex h-12 w-12 shrink-0 items-center justify-center bg-white/20">
-            <Shield class="size-6 text-white" />
+            <Shield class="text-background size-6" />
           </div>
           <div class="flex flex-col gap-1">
             <Card.Title
-              class="font-space text-xl font-extrabold tracking-[1px] text-white uppercase"
+              class="font-space text-background text-xl font-extrabold tracking-[1px] uppercase"
               >Indexing rules</Card.Title
             >
-            <Card.Description class="font-inter text-sm text-white/70"
+            <Card.Description class="font-inter text-background/70 text-sm"
               >{ruleRows.length} rules configured · patterns use
               <a
                 href="https://pkg.go.dev/regexp/syntax"
@@ -519,7 +522,7 @@
             <Button
               type="button"
               onclick={addRule}
-              class="bg-hister-coral font-space border-brutal-border brutal-press h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] text-white uppercase"
+              class="bg-hister-coral font-space border-brutal-border brutal-press text-background h-10 gap-2 border-[3px] px-5 text-sm font-bold tracking-[1px] uppercase"
             >
               <Plus class="size-4 shrink-0" />
               Add
@@ -601,10 +604,10 @@
                         variant="default"
                         class="font-space border-0 px-2 py-1 text-xs font-bold tracking-[0.5px] uppercase md:px-3 {row.type ===
                         'skip'
-                          ? 'bg-hister-rose text-white'
+                          ? 'bg-hister-rose text-background'
                           : row.type === 'priority'
-                            ? 'bg-hister-teal text-white'
-                            : 'bg-violet-500 text-white'}"
+                            ? 'bg-hister-teal text-background'
+                            : 'text-background bg-violet-500'}"
                       >
                         {row.type}
                       </Badge>

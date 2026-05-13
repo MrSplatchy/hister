@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -1084,6 +1085,17 @@ func serveSaveHistory(c *webContext) {
 	}
 }
 
+// validatePatterns checks that each string in patterns is a valid Go regexp.
+// Returns an error naming the first invalid pattern.
+func validatePatterns(patterns []string) error {
+	for _, p := range patterns {
+		if _, err := regexp.Compile(p); err != nil {
+			return fmt.Errorf("invalid pattern %q: %w", p, err)
+		}
+	}
+	return nil
+}
+
 func serveRules(c *webContext) {
 	m := c.Request.Method
 	rules := c.effectiveRules()
@@ -1123,12 +1135,25 @@ func serveRules(c *webContext) {
 		return
 	}
 	f := c.Request.PostForm
-	rules.Skip.ReStrs = uniqueStrings(strings.Fields(f.Get("skip")))
-	rules.Priority.ReStrs = uniqueStrings(strings.Fields(f.Get("priority")))
+	skipPatterns := uniqueStrings(strings.Fields(f.Get("skip")))
+	priorityPatterns := uniqueStrings(strings.Fields(f.Get("priority")))
+	versioningPatterns := uniqueStrings(strings.Fields(f.Get("versioning")))
+	for label, patterns := range map[string][]string{
+		"skip":       skipPatterns,
+		"priority":   priorityPatterns,
+		"versioning": versioningPatterns,
+	} {
+		if err := validatePatterns(patterns); err != nil {
+			http.Error(c.Response, fmt.Sprintf("%s: %s", label, err.Error()), http.StatusBadRequest)
+			return
+		}
+	}
+	rules.Skip.ReStrs = skipPatterns
+	rules.Priority.ReStrs = priorityPatterns
 	if rules.Versioning == nil {
 		rules.Versioning = &config.Rule{ReStrs: make([]string, 0)}
 	}
-	rules.Versioning.ReStrs = uniqueStrings(strings.Fields(f.Get("versioning")))
+	rules.Versioning.ReStrs = versioningPatterns
 	if err := rules.Compile(); err != nil {
 		log.Error().Err(err).Msg("failed to compile rules")
 		serve500(c)
