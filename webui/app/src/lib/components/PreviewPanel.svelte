@@ -5,7 +5,7 @@
   import { formatTimestamp, formatMetaDate } from '$lib/search';
   import { ScrollArea } from '@hister/components/ui/scroll-area';
   import { Button } from '@hister/components/ui/button';
-  import { Eye, X, Maximize2, Minimize2 } from 'lucide-svelte';
+  import { Eye, X, Maximize2, Minimize2, History } from 'lucide-svelte';
 
   interface Props {
     url: string;
@@ -13,6 +13,13 @@
     onclose: () => void;
     fullscreen?: boolean;
     onfullscreentoggle?: () => void;
+  }
+
+  interface DocumentVersion {
+    id: number;
+    created_at: string;
+    html_diff: string;
+    text_diff: string;
   }
 
   let { url, hintTitle = '', onclose, fullscreen = false, onfullscreentoggle }: Props = $props();
@@ -24,6 +31,8 @@
   let meta = $state<Record<string, any> | null>(null);
   let added = $state<number | null>(null);
   let loading = $state(false);
+  let versions = $state<DocumentVersion[]>([]);
+  let showVersions = $state(false);
 
   function parseTemplateData(c: string): any | null {
     try {
@@ -33,9 +42,28 @@
     }
   }
 
+  type DiffLine = { type: 'header' | 'add' | 'remove' | 'context'; text: string };
+
+  function parseDiff(patch: string): DiffLine[] {
+    return patch
+      .split('\n')
+      .filter((l) => l !== '')
+      .map((l): DiffLine => {
+        if (l.startsWith('@@')) return { type: 'header', text: l };
+        if (l.startsWith('+')) return { type: 'add', text: l };
+        if (l.startsWith('-')) return { type: 'remove', text: l };
+        return { type: 'context', text: l };
+      });
+  }
+
+  function versionTimestamp(iso: string): number {
+    return new Date(iso).getTime() / 1000;
+  }
+
   $effect(() => {
     if (url) {
       loadContent(url, hintTitle);
+      loadVersions(url);
     }
   });
 
@@ -47,6 +75,7 @@
     meta = null;
     added = null;
     title = hint;
+    showVersions = false;
     try {
       const resp = await apiFetch(`/preview?url=${encodeURIComponent(u)}`);
       if (!resp.ok) {
@@ -64,6 +93,18 @@
       content = `<p class="text-hister-rose">Failed to load: ${err}</p>`;
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadVersions(u: string) {
+    versions = [];
+    try {
+      const resp = await apiFetch(`/versions?url=${encodeURIComponent(u)}`);
+      if (resp.ok) {
+        versions = (await resp.json()) ?? [];
+      }
+    } catch {
+      // silently ignore — versions are optional
     }
   }
 </script>
@@ -125,9 +166,23 @@
           </span>
         {/if}
         {#if added}
-          <span class="font-inter text-text-brand-muted text-xs" title={formatTimestamp(added)}
-            >indexed {formatTimestamp(added)}</span
+          <span
+            class="font-inter inline-flex flex-wrap items-center gap-1.5 text-xs"
+            title={formatTimestamp(added)}
           >
+            <span>indexed {formatTimestamp(added)}</span>
+            {#if versions.length > 0}
+              <span class="text-text-brand-muted">·</span>
+              <button
+                onclick={() => (showVersions = !showVersions)}
+                class="font-inter text-hister-teal inline-flex cursor-pointer items-center gap-1 text-xs hover:underline"
+              >
+                <History class="size-3" />
+                {versions.length}
+                {versions.length === 1 ? 'previous version' : 'previous versions'}
+              </button>
+            {/if}
+          </span>
         {/if}
         {#if meta?.description}
           <p class="font-inter text-text-brand-secondary mt-1 line-clamp-3 text-sm">
@@ -140,7 +195,7 @@
           <Button
             variant="ghost"
             size="icon-sm"
-            class="text-text-brand-muted hover:text-text-brand"
+            class="hover:text-text-brand"
             onclick={onfullscreentoggle}
             title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
@@ -151,41 +206,75 @@
             {/if}
           </Button>
         {/if}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          class="text-text-brand-muted hover:text-text-brand"
-          onclick={onclose}
-        >
+        <Button variant="ghost" size="icon-sm" class="hover:text-text-brand" onclick={onclose}>
           <X class="size-4" />
         </Button>
       </div>
     </div>
     <ScrollArea class="min-h-0 flex-1">
-      <div
-        class="font-inter text-text-brand-secondary prose dark:prose-invert prose-a:text-hister-teal w-full max-w-[60em] p-4 text-sm"
-      >
-        {#if template === 'video' && templateData}
-          <VideoPreview data={templateData} />
-        {:else}
-          {@html content}
-        {/if}
-        {#if meta?.jsonld}
-          <details class="not-prose border-border-brand-muted mt-6 border-t pt-3">
-            <summary
-              class="font-inter text-text-brand-muted cursor-pointer text-xs tracking-wide uppercase"
-            >
-              Extracted JSON-LD ({meta.jsonld.length})
-            </summary>
-            <pre
-              class="bg-card-surface-muted text-text-brand-secondary mt-2 overflow-x-auto rounded p-2 text-[11px] leading-snug">{JSON.stringify(
-                meta.jsonld,
-                null,
-                2,
-              )}</pre>
-          </details>
-        {/if}
-      </div>
+      {#if showVersions}
+        <div class="flex flex-col divide-y divide-[var(--border-brand-muted)] p-4">
+          {#each versions as v}
+            <div class="py-4 first:pt-0 last:pb-0">
+              <p class="font-inter mb-2 text-xs font-semibold tracking-wide uppercase">
+                {formatTimestamp(versionTimestamp(v.created_at))}
+              </p>
+              {#if v.text_diff || v.html_diff}
+                <details class="group">
+                  <summary
+                    class="font-inter text-text-brand-muted hover:text-text-brand flex cursor-pointer list-none items-center gap-1 text-xs select-none"
+                  >
+                    <span class="inline-block transition-transform group-open:rotate-90">▶</span>
+                    <span>show diff</span>
+                  </summary>
+                  <div class="mt-2 overflow-x-auto rounded font-mono text-xs leading-relaxed">
+                    {#each parseDiff(v.text_diff || v.html_diff) as line}
+                      <div
+                        class="px-2 py-px break-all whitespace-pre-wrap {line.type === 'add'
+                          ? 'bg-black text-green-300'
+                          : line.type === 'remove'
+                            ? 'bg-black text-red-300'
+                            : line.type === 'header'
+                              ? 'text-text-brand'
+                              : 'text-text-brand-secondary'}"
+                      >
+                        {line.text}
+                      </div>
+                    {/each}
+                  </div>
+                </details>
+              {:else}
+                <p class="font-inter text-xs italic">No diff recorded.</p>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div
+          class="font-inter text-text-brand-secondary prose dark:prose-invert prose-a:text-hister-teal w-full max-w-[60em] p-4 text-sm"
+        >
+          {#if template === 'video' && templateData}
+            <VideoPreview data={templateData} />
+          {:else}
+            {@html content}
+          {/if}
+          {#if meta?.jsonld}
+            <details class="not-prose border-border-brand-muted mt-6 border-t pt-3">
+              <summary
+                class="font-inter text-text-brand-muted cursor-pointer text-xs tracking-wide uppercase"
+              >
+                Extracted JSON-LD ({meta.jsonld.length})
+              </summary>
+              <pre
+                class="bg-card-surface-muted text-text-brand-secondary mt-2 overflow-x-auto rounded p-2 text-[11px] leading-snug">{JSON.stringify(
+                  meta.jsonld,
+                  null,
+                  2,
+                )}</pre>
+            </details>
+          {/if}
+        </div>
+      {/if}
     </ScrollArea>
   {:else}
     <div
