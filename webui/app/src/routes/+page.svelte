@@ -252,7 +252,7 @@
     ],
   ];
 
-  const currentTip = tips[Math.floor(Math.random() * tips.length)];
+  let currentTip = $state(tips[Math.floor(Math.random() * tips.length)]);
 
   const hotkeyByAction = $derived(
     Object.fromEntries(Object.entries(config.hotkeys).map(([key, action]) => [action, key])),
@@ -282,6 +282,14 @@
   };
 
   const isSearching = $derived(query.length > 0 || resultsShown);
+
+  let tipWasSearching = false;
+  $effect(() => {
+    if (tipWasSearching && !isSearching) {
+      currentTip = tips[Math.floor(Math.random() * tips.length)];
+    }
+    tipWasSearching = isSearching;
+  });
 
   interface DisplayResult {
     url: string;
