@@ -24,16 +24,17 @@ function extensionPlugin() {
       ff.version = pkg.version;
       ff.background.scripts = ['background.js'];
       ff.content_security_policy = { extension_pages: "script-src 'self'" };
-      const geckoSettings = {
-        id: '{f0bda7ce-0cda-42dc-9ea8-126b20fed280}',
-        strict_min_version: '110.0',
-        data_collection_permissions: {
-          required: ['browsingActivity', 'websiteContent'],
-        },
-      };
       ff.browser_specific_settings = {
-        gecko: geckoSettings,
-        gecko_android: geckoSettings,
+        gecko: {
+          id: '{f0bda7ce-0cda-42dc-9ea8-126b20fed280}',
+          strict_min_version: '110.0',
+          data_collection_permissions: {
+            required: ['browsingActivity', 'websiteContent'],
+          },
+        },
+        gecko_android: {
+          strict_min_version: '110.0',
+        },
       };
       writeFileSync(resolve(distDir, 'manifest_ff.json'), JSON.stringify(ff));
 
