@@ -190,9 +190,17 @@ type Results struct {
 	Facets          *FacetsResult        `json:"facets,omitempty"`
 }
 
+type batchKeyChange struct {
+	oldHTMLKey    string
+	newHTMLKey    string
+	oldFaviconKey string
+	newFaviconKey string
+}
+
 type MultiBatch struct {
-	indexer *indexer
-	batches map[string]*bleve.Batch
+	indexer    *indexer
+	batches    map[string]*bleve.Batch
+	keyChanges []batchKeyChange
 }
 
 var (
@@ -635,43 +643,74 @@ func (i *indexer) AddDocument(d *document.Document) error {
 }
 
 func (i *indexer) save(d *document.Document) error {
-	oldHTMLKey, oldFaviconKey := i.getDocKeysByID(d.ID())
+	oldHTMLKeys, oldFaviconKeys := i.getDocKeysByID(d.ID())
 	if err := i.prepareForStorage(d); err != nil {
 		return err
 	}
 	log.Debug().Str("URL", d.URL).Msg("item added to index")
+	// Remove the document from every sub-index before writing it to the
+	// language-routed one. Without this, a language change (e.g. "en" on
+	// first add, "de" on re-add) leaves a stale entry in the old sub-index
+	// that keeps the old html_key/favicon_key reference count at 1, preventing
+	// orphaned file cleanup and eventually creating true orphans when
+	// subsequent re-adds miss the stale entry as the "old" keys.
+	// Skip for new documents (no old keys) — nothing to delete.
+	if len(oldHTMLKeys) > 0 || len(oldFaviconKeys) > 0 {
+		for _, idx := range i.indexers {
+			if err := idx.Delete(d.ID()); err != nil {
+				return err
+			}
+		}
+	}
 	if err := i.getOrCreate(d.Language).Index(d.ID(), d); err != nil {
 		return err
 	}
-	// After the index entry is updated, check whether the previous keys are
-	// still referenced and remove the files if not. Per-key shard locking in
-	// deleteIfOrphaned makes each check+delete atomic for that key without
-	// blocking unrelated keys.
-	if oldHTMLKey != "" && oldHTMLKey != d.HTMLKey {
-		i.data.deleteIfOrphaned("html_key", htmlSubdir, oldHTMLKey, i.countKeyRefs)
+	// All old sub-index entries are now gone so countKeyRefs correctly
+	// reflects only genuine cross-document sharing. Clean up every old key
+	// that is no longer the current one — this handles stale cross-sub-index
+	// entries where getDocKeysByID may have returned multiple keys.
+	for _, k := range oldHTMLKeys {
+		if k != d.HTMLKey {
+			i.data.deleteIfOrphaned("html_key", htmlSubdir, k, i.countKeyRefs)
+		}
 	}
-	if oldFaviconKey != "" && oldFaviconKey != d.FaviconKey {
-		i.data.deleteIfOrphaned("favicon_key", faviconSubdir, oldFaviconKey, i.countKeyRefs)
+	for _, k := range oldFaviconKeys {
+		if k != d.FaviconKey {
+			i.data.deleteIfOrphaned("favicon_key", faviconSubdir, k, i.countKeyRefs)
+		}
 	}
 	return nil
 }
 
-// getDocKeysByID fetches only the html_key and favicon_key fields for the
-// document with the given Bleve document ID without loading the data files.
-func (i *indexer) getDocKeysByID(id string) (htmlKey, faviconKey string) {
+// getDocKeysByID fetches all html_key and favicon_key values for every
+// sub-index entry with the given Bleve document ID. The same document can
+// appear in more than one sub-index when language routing changed across
+// re-adds (stale entry in old sub-index + current entry in new one).
+// Collecting all keys ensures every stale copy is considered for cleanup.
+func (i *indexer) getDocKeysByID(id string) (htmlKeys, faviconKeys []string) {
 	q := bleve.NewDocIDQuery([]string{id})
 	req := bleve.NewSearchRequest(q)
 	req.Fields = []string{"html_key", "favicon_key"}
+	req.Size = len(i.indexers) + 1 // at most one entry per sub-index
 	res, err := i.idx.Search(req)
 	if err != nil || len(res.Hits) < 1 {
-		return "", ""
+		return nil, nil
 	}
-	h := res.Hits[0]
-	if k, ok := h.Fields["html_key"].(string); ok {
-		htmlKey = k
-	}
-	if k, ok := h.Fields["favicon_key"].(string); ok {
-		faviconKey = k
+	seenHTML := make(map[string]struct{})
+	seenFav := make(map[string]struct{})
+	for _, h := range res.Hits {
+		if k, ok := h.Fields["html_key"].(string); ok && k != "" {
+			if _, dup := seenHTML[k]; !dup {
+				htmlKeys = append(htmlKeys, k)
+				seenHTML[k] = struct{}{}
+			}
+		}
+		if k, ok := h.Fields["favicon_key"].(string); ok && k != "" {
+			if _, dup := seenFav[k]; !dup {
+				faviconKeys = append(faviconKeys, k)
+				seenFav[k] = struct{}{}
+			}
+		}
 	}
 	return
 }
@@ -844,16 +883,46 @@ func (b *MultiBatch) Add(d *document.Document) error {
 	if b.indexer.embedder != nil && b.indexer.vectorStore != nil {
 		embedDocumentChunks(b.indexer.embedCtx, b.indexer, d)
 	}
+	oldHTMLKeys, oldFaviconKeys := b.indexer.getDocKeysByID(d.ID())
 	if err := b.indexer.prepareForStorage(d); err != nil {
 		return err
 	}
+	// Delete from all existing sub-indexes before writing to the language-routed
+	// one, mirroring what save() does. Without this a language change leaves a
+	// stale entry that corrupts reference counting.
+	// Skip for new documents (no old keys) — nothing to delete.
+	if len(oldHTMLKeys) > 0 || len(oldFaviconKeys) > 0 {
+		for name, idx := range b.indexer.indexers {
+			b.getOrCreateBatch(name, idx).Delete(d.ID())
+		}
+	}
 	idx := b.indexer.getOrCreate(d.Language)
-	return b.getOrCreateBatch(idx.Name(), idx).Index(d.ID(), d)
+	if err := b.getOrCreateBatch(idx.Name(), idx).Index(d.ID(), d); err != nil {
+		return err
+	}
+	for _, k := range oldHTMLKeys {
+		if k != d.HTMLKey {
+			b.keyChanges = append(b.keyChanges, batchKeyChange{oldHTMLKey: k, newHTMLKey: d.HTMLKey})
+		}
+	}
+	for _, k := range oldFaviconKeys {
+		if k != d.FaviconKey {
+			b.keyChanges = append(b.keyChanges, batchKeyChange{oldFaviconKey: k, newFaviconKey: d.FaviconKey})
+		}
+	}
+	return nil
 }
 
 func (b *MultiBatch) Delete(id string) {
+	oldHTMLKeys, oldFaviconKeys := b.indexer.getDocKeysByID(id)
 	for name, idx := range b.indexer.indexers {
 		b.getOrCreateBatch(name, idx).Delete(id)
+	}
+	for _, k := range oldHTMLKeys {
+		b.keyChanges = append(b.keyChanges, batchKeyChange{oldHTMLKey: k})
+	}
+	for _, k := range oldFaviconKeys {
+		b.keyChanges = append(b.keyChanges, batchKeyChange{oldFaviconKey: k})
 	}
 }
 
@@ -863,11 +932,19 @@ func (b *MultiBatch) Save() error {
 			return err
 		}
 	}
+	for _, kc := range b.keyChanges {
+		if kc.oldHTMLKey != "" && kc.oldHTMLKey != kc.newHTMLKey {
+			b.indexer.data.deleteIfOrphaned("html_key", htmlSubdir, kc.oldHTMLKey, b.indexer.countKeyRefs)
+		}
+		if kc.oldFaviconKey != "" && kc.oldFaviconKey != kc.newFaviconKey {
+			b.indexer.data.deleteIfOrphaned("favicon_key", faviconSubdir, kc.oldFaviconKey, b.indexer.countKeyRefs)
+		}
+	}
 	return nil
 }
 
 func Delete(id string) error {
-	htmlKey, faviconKey := i.getDocKeysByID(id)
+	htmlKeys, faviconKeys := i.getDocKeysByID(id)
 	if i.vectorStore != nil {
 		if err := i.vectorStore.Delete(id); err != nil {
 			log.Warn().Err(err).Str("id", id).Msg("vector store delete failed")
@@ -878,11 +955,11 @@ func Delete(id string) error {
 			return err
 		}
 	}
-	if htmlKey != "" {
-		i.data.deleteIfOrphaned("html_key", htmlSubdir, htmlKey, i.countKeyRefs)
+	for _, k := range htmlKeys {
+		i.data.deleteIfOrphaned("html_key", htmlSubdir, k, i.countKeyRefs)
 	}
-	if faviconKey != "" {
-		i.data.deleteIfOrphaned("favicon_key", faviconSubdir, faviconKey, i.countKeyRefs)
+	for _, k := range faviconKeys {
+		i.data.deleteIfOrphaned("favicon_key", faviconSubdir, k, i.countKeyRefs)
 	}
 	return nil
 }
