@@ -47,7 +47,7 @@ func Build(s string) query.Query {
 	}
 	if len(qt) > 1 && !anyFieldSpecific(qt) {
 		// create a full phrase query from the query string to get exact matches for the full query
-		pq := createMatchPhraseQuery(s, 2)
+		pq := createCombinedMatchQuery(s, 2)
 		qs = []query.Query{
 			bleve.NewDisjunctionQuery(
 				bleve.NewConjunctionQuery(qs...),
@@ -103,6 +103,29 @@ func createSimpleQuery(s string) query.Query {
 	return bleve.NewQueryStringQuery(s)
 }
 
+func createCombinedMatchQuery(s string, boost float64) query.Query {
+	q := bleve.NewDisjunctionQuery(
+		createMatchPhraseQuery(s, boost*10),
+		createMatchQuery(s, boost),
+	)
+	q.SetBoost(boost)
+	return q
+}
+
+// Matches any terms from the query
+func createMatchQuery(s string, boost float64) query.Query {
+	tiq := bleve.NewMatchQuery(s)
+	tiq.SetField("title")
+	tiq.SetBoost(weights["title"])
+	teq := bleve.NewMatchQuery(s)
+	teq.SetField("text")
+	teq.SetBoost(weights["text"])
+	q := bleve.NewDisjunctionQuery(tiq, teq)
+	q.SetBoost(boost)
+	return q
+}
+
+// Matches exact phrases without stopwords
 func createMatchPhraseQuery(s string, boost float64) query.Query {
 	tiq := bleve.NewMatchPhraseQuery(s)
 	tiq.SetField("title")
