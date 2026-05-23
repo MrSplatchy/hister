@@ -275,6 +275,9 @@
         } else {
           pageKey = resJSON.page_key ?? '';
         }
+      } else {
+        pageKey = '';
+        openedLastID = 0;
       }
     } catch (e) {
       error = String(e);
