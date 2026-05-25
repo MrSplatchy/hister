@@ -14,6 +14,7 @@ import (
 	"github.com/asciimoo/hister/config"
 	"github.com/asciimoo/hister/files"
 	"github.com/asciimoo/hister/server/document"
+	"github.com/asciimoo/hister/server/model"
 )
 
 var (
@@ -45,6 +46,16 @@ func indexDirectory(dir string, cfg *config.Directory) error {
 	indexed := 0
 	skipped := 0
 
+	var userID uint
+	if cfg.User != "" {
+		u, err := model.GetUser(cfg.User)
+		if err != nil {
+			log.Error().Err(err).Str("directory", dir).Msg("Failed to resolve user for directory")
+			return fmt.Errorf("user %q not found for directory %s: %w", cfg.User, dir, err)
+		}
+		userID = u.ID
+	}
+
 	log.Debug().Str("directory", dir).Msg("Indexing directory")
 
 	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -61,7 +72,7 @@ func indexDirectory(dir string, cfg *config.Directory) error {
 		if !cfg.IsMatching(d.Name()) {
 			return nil
 		}
-		if err := IndexFile(path); err != nil {
+		if err := IndexFile(path, userID); err != nil {
 			log.Debug().Err(err).Str("path", path).Msg("Skipping file")
 			skipped++
 		} else {
@@ -74,7 +85,7 @@ func indexDirectory(dir string, cfg *config.Directory) error {
 	return err
 }
 
-func IndexFile(path string) error {
+func IndexFile(path string, userID uint) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -94,7 +105,7 @@ func IndexFile(path string) error {
 	fileURL := files.PathToFileURL(absPath)
 
 	// Skip if already indexed with the same modification time
-	existing := GetByURLAndUser(fileURL, 0)
+	existing := GetByURLAndUser(fileURL, userID)
 	if existing != nil && existing.Added == info.ModTime().Unix() {
 		return nil
 	}
@@ -107,8 +118,9 @@ func IndexFile(path string) error {
 	}
 
 	doc := &document.Document{
-		URL:   fileURL,
-		Added: info.ModTime().Unix(),
+		URL:    fileURL,
+		Added:  info.ModTime().Unix(),
+		UserID: userID,
 	}
 
 	if strings.EqualFold(filepath.Ext(path), ".pdf") {

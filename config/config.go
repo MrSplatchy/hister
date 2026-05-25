@@ -90,6 +90,7 @@ type Directory struct {
 	Excludes       []string `yaml:"excludes"          mapstructure:"excludes"`
 	IncludeHidden  bool     `yaml:"include_hidden"    mapstructure:"include_hidden"`
 	DeleteOnRemove bool     `yaml:"delete_on_remove"  mapstructure:"delete_on_remove"`
+	User           string   `yaml:"user"              mapstructure:"user"`
 }
 
 type Indexer struct {

@@ -18,6 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/asciimoo/hister/config"
+	"github.com/asciimoo/hister/server/model"
 )
 
 func ExpandHome(path string) string {
@@ -76,6 +77,23 @@ func FindMatchingDir(dirs []*config.Directory, filePath string) *config.Director
 		}
 	}
 	return nil
+}
+
+// FindDirUser finds the directory config matching a file path and resolves its user to a user ID.
+// Returns 0 for global directories (no user set). Returns an error if the username can't be resolved.
+func FindDirUser(dirs []*config.Directory, filePath string) (uint, error) {
+	dir := FindMatchingDir(dirs, filePath)
+	if dir == nil {
+		return 0, nil
+	}
+	if dir.User == "" {
+		return 0, nil
+	}
+	u, err := model.GetUser(dir.User)
+	if err != nil {
+		return 0, fmt.Errorf("user %q not found", dir.User)
+	}
+	return u.ID, nil
 }
 
 // skipDirs lists directory names that are skipped by default during watching.
