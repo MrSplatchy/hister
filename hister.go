@@ -290,7 +290,7 @@ Import browsing history from a supported browser.
 
 Usage:
   import-browser auto-detect                       - auto-detect all installed browsers
-  import-browser browser BROWSER_TYPE DB_PATH      - auto-discover the database for the given browser
+  import-browser browser BROWSER_TYPE DB_PATH      - auto-discover the database for the given browser, unless the path DB_PATH is specified
   import-browser file DB_PATH                      - use database path and auto-detect browser type
 
 Supported for browser types for auto-detecting: firefox, chrome, chromium, brave, edge, vivaldi, opera, zen, waterfox, Ladybird
@@ -1470,7 +1470,7 @@ func importHistory(cmd *cobra.Command, args []string) {
 		}
 
 	case "browser":
-		// Browser name given; auto-discover its database.
+		// Browser name given; auto-discover its database or with specified database.
 		browser := strings.ToLower(args[1])
 		var found bool
 		if len(args) == 3 {
@@ -1496,7 +1496,7 @@ func importHistory(cmd *cobra.Command, args []string) {
 		}
 
 	case "file":
-		// Browser name + explicit path.
+		// Auto-detect browser given the database file
 		DBfile := args[1]
 		var table string
 
@@ -1945,22 +1945,4 @@ func browserTableName(browser string) string {
 		return "History"
 	}
 	return ""
-}
-
-func ZeroOrTwoArgs() cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		if len(args) != 0 && len(args) != 2 {
-			return fmt.Errorf("accepts 0 or 2 arguments, received %d", len(args))
-		}
-		return nil
-	}
-}
-
-func ZeroToTwoArgs() cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		if len(args) > 2 {
-			return fmt.Errorf("accepts 0, 1, or 2 arguments, received %d", len(args))
-		}
-		return nil
-	}
 }
