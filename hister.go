@@ -163,7 +163,15 @@ var listenCmd = &cobra.Command{
 			indexer.IndexAll(cfg.Indexer.Directories)
 			go func() {
 				if err := files.WatchDirectories(context.Background(), cfg.Indexer.Directories, func(path string) {
-					if err := indexer.IndexFile(path); err != nil {
+					userID, err := files.FindDirUser(cfg.Indexer.Directories, path)
+					if err != nil {
+						log.Error().Err(err).Str("path", path).Msg("Failed to resolve user for file")
+						return
+					} else if userID != 0 && !cfg.App.UserHandling {
+						log.Error().Str("path", path).Msg("user field set but user_handling is not enabled")
+						return
+					}
+					if err := indexer.IndexFile(path, userID); err != nil {
 						log.Debug().Err(err).Str("path", path).Msg("Failed to index file")
 					}
 				}, func(path string) {

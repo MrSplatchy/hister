@@ -12,3 +12,6 @@ dist/
 build/
 server/static/app
 tmp/
+
+.test/
+.pre-commit-config.yaml

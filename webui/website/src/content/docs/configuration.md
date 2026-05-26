@@ -244,14 +244,15 @@ TUI settings are configured in a separate `tui.yaml` file located in the same di
 
 Each entry in `directories` is an object with the following keys:
 
-| Key                | Type     | Default | Description                                                                                                                                                                                                           |
-| ------------------ | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`             | string   | ""      | **(required)** Directory path to index. Paths starting with `~/` are expanded to your home directory.                                                                                                                 |
-| `filetypes`        | string[] | (none)  | Only index files with these extensions (without the dot). e.g. `['txt', 'md']`.                                                                                                                                       |
-| `patterns`         | string[] | (none)  | Only index files whose names match at least one glob pattern. e.g. `['doc_*', 'README*']`.                                                                                                                            |
-| `excludes`         | string[] | (none)  | Skip files whose names match any of these glob patterns. e.g. `['*secret*', '*.tmp']`.                                                                                                                                |
-| `include_hidden`   | bool     | `false` | When `true`, index hidden files/directories (starting with `.`) and well-known dependency/cache directories (`node_modules`, `__pycache__`, etc.) that are skipped by default. User-specified `excludes` still apply. |
-| `delete_on_remove` | bool     | `false` | When `true`, automatically remove a file from the index when it is deleted or renamed on the filesystem.                                                                                                              |
+| Key                | Type     | Default | Description                                                                                                                                                                                                                                                                                                  |
+| ------------------ | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `path`             | string   | ""      | **(required)** Directory path to index. Paths starting with `~/` are expanded to your home directory.                                                                                                                                                                                                        |
+| `filetypes`        | string[] | (none)  | Only index files with these extensions (without the dot). e.g. `['txt', 'md']`.                                                                                                                                                                                                                              |
+| `patterns`         | string[] | (none)  | Only index files whose names match at least one glob pattern. e.g. `['doc_*', 'README*']`.                                                                                                                                                                                                                   |
+| `excludes`         | string[] | (none)  | Skip files whose names match any of these glob patterns. e.g. `['*secret*', '*.tmp']`.                                                                                                                                                                                                                       |
+| `include_hidden`   | bool     | `false` | When `true`, index hidden files/directories (starting with `.`) and well-known dependency/cache directories (`node_modules`, `__pycache__`, etc.) that are skipped by default. User-specified `excludes` still apply.                                                                                        |
+| `delete_on_remove` | bool     | `false` | When `true`, automatically remove a file from the index when it is deleted or renamed on the filesystem.                                                                                                                                                                                                     |
+| `user`             | string   | `""`    | Username that owns files in this directory. Files are only visible to this user in search results (plus global files). Omit or leave empty for global access. A non-existing username, or a configured username when `user_handling` is not enabled, causes an error log entry and the directory is skipped. |
 
 When multiple filters are specified, they are applied in order: excludes first, then filetypes, then patterns. A file must pass all specified filters to be indexed. When a filter is omitted, it is not applied (all files pass).
 
@@ -270,6 +271,30 @@ indexer:
     - path: '/path/to/project'
       filetypes: ['go', 'py', 'js']
 ```
+
+### User-scoped directories
+
+When `user_handling` is enabled, you can scope indexed files to specific users using the `user` field. Files in a user-scoped directory are only visible to that user in search results. Global directories (no `user` set) are visible to all users.
+
+```yaml
+indexer:
+  directories:
+    - path: '/nextcloud/notes/alice'
+      user: 'alice'
+      filetypes: ['txt', 'md']
+    - path: '/nextcloud/notes/bob'
+      user: 'bob'
+      filetypes: ['txt', 'md']
+    - path: '/shared/docs'
+      # no user = global, visible to all
+      filetypes: ['pdf', 'doc']
+```
+
+Visibility rules:
+
+- A user sees files from directories where `user == username` plus global directories (`user` empty or unset) plus their own web documents
+- Admins have the same visibility as regular users (no special access to other users' files)
+- Unauthenticated users see global directories only
 
 Files are indexed recursively, with the following rules:
 
