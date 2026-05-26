@@ -369,9 +369,6 @@ func Reindex(basePath string, rules *config.Rules, skipSensitiveChecks bool, det
 	req.Size = batchSize
 	req.SortBy([]string{"_id"})
 
-	referencedHTMLKeys := make(map[string]struct{})
-	referencedFaviconKeys := make(map[string]struct{})
-
 	for {
 		if len(sortKey) > 0 {
 			req.SetSearchAfter(sortKey)
@@ -430,12 +427,6 @@ func Reindex(basePath string, rules *config.Rules, skipSensitiveChecks bool, det
 				}
 				return err
 			}
-			if d.HTMLKey != "" {
-				referencedHTMLKeys[d.HTMLKey] = struct{}{}
-			}
-			if d.FaviconKey != "" {
-				referencedFaviconKeys[d.FaviconKey] = struct{}{}
-			}
 		}
 		if err := b.Save(); err != nil {
 			tmpIdx.Close()
@@ -485,10 +476,10 @@ func Reindex(basePath string, rules *config.Rules, skipSensitiveChecks bool, det
 		return err
 	}
 	// Remove data files no longer referenced by any document.
-	if _, err := i.data.cleanup(htmlSubdir, referencedHTMLKeys); err != nil {
+	if _, err := i.data.cleanup("html_key", htmlSubdir, i.countKeyRefs); err != nil {
 		log.Warn().Err(err).Msg("failed to clean up orphaned HTML data files")
 	}
-	if _, err := i.data.cleanup(faviconSubdir, referencedFaviconKeys); err != nil {
+	if _, err := i.data.cleanup("favicon_key", faviconSubdir, i.countKeyRefs); err != nil {
 		log.Warn().Err(err).Msg("failed to clean up orphaned favicon data files")
 	}
 	return nil
@@ -498,45 +489,15 @@ func Reindex(basePath string, rules *config.Rules, skipSensitiveChecks bool, det
 // directories (files that exist on disk but are no longer referenced by any
 // document in the index). It returns the number of HTML and favicon files
 // removed, and any walk error encountered.
+// Each candidate file is checked with a live ref-count query while holding the
+// per-key shard lock, so the check and the removal are atomic and safe against
+// concurrent /api/add calls.
 func CleanupDataFiles(basePath string) (int, int, error) {
-	q := query.NewMatchAllQuery()
-	req := bleve.NewSearchRequest(q)
-	req.Fields = []string{"html_key", "favicon_key"}
-	req.Size = 50
-	req.SortBy([]string{"_id"})
-
-	referencedHTMLKeys := make(map[string]struct{})
-	referencedFaviconKeys := make(map[string]struct{})
-
-	var sortKey []string
-	for {
-		if len(sortKey) > 0 {
-			req.SetSearchAfter(sortKey)
-		}
-		res, err := i.idx.Search(req)
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to iterate documents during cleanup: %w", err)
-		}
-		n := len(res.Hits)
-		if n < 1 {
-			break
-		}
-		for _, h := range res.Hits {
-			if k, ok := h.Fields["html_key"].(string); ok && k != "" {
-				referencedHTMLKeys[k] = struct{}{}
-			}
-			if k, ok := h.Fields["favicon_key"].(string); ok && k != "" {
-				referencedFaviconKeys[k] = struct{}{}
-			}
-		}
-		sortKey = res.Hits[n-1].Sort
-	}
-
-	htmlRemoved, err := i.data.cleanup(htmlSubdir, referencedHTMLKeys)
+	htmlRemoved, err := i.data.cleanup("html_key", htmlSubdir, i.countKeyRefs)
 	if err != nil {
 		return htmlRemoved, 0, fmt.Errorf("failed to clean up orphaned HTML data files: %w", err)
 	}
-	faviconRemoved, err := i.data.cleanup(faviconSubdir, referencedFaviconKeys)
+	faviconRemoved, err := i.data.cleanup("favicon_key", faviconSubdir, i.countKeyRefs)
 	if err != nil {
 		return htmlRemoved, faviconRemoved, fmt.Errorf("failed to clean up orphaned favicon data files: %w", err)
 	}

@@ -106,10 +106,11 @@ func (ds *dataStore) deleteIfOrphaned(field, subdir, key string, refCount func(s
 	}
 }
 
-// cleanup removes unreferenced .gz files under subdir. Each deletion acquires
-// the per-key shard lock so concurrent reads or writes on the same key are
-// serialised without blocking unrelated keys.
-func (ds *dataStore) cleanup(subdir string, referenced map[string]struct{}) (int, error) {
+// cleanup removes unreferenced .gz files under subdir. For each candidate file
+// the per-key shard lock is acquired and refCount is called while holding the
+// lock, so the check and the removal are atomic with respect to concurrent
+// writes or deletes of the same key
+func (ds *dataStore) cleanup(field, subdir string, refCount func(string, string) uint64) (int, error) {
 	root := filepath.Join(ds.dir, subdir)
 	if _, err := os.Stat(root); os.IsNotExist(err) {
 		return 0, nil
@@ -135,17 +136,17 @@ func (ds *dataStore) cleanup(subdir string, referenced map[string]struct{}) (int
 		}
 		// parts[3] is the filename with .gz suffix; strip it to get the hash tail.
 		key := parts[0] + parts[1] + parts[2] + parts[3][:len(parts[3])-3]
-		if _, ok := referenced[key]; !ok {
-			mu := ds.shard(key)
-			mu.Lock()
+		mu := ds.shard(key)
+		mu.Lock()
+		if refCount(field, key) == 0 {
 			if rerr := os.Remove(path); rerr != nil {
 				log.Warn().Err(rerr).Str("path", path).Msg("failed to remove orphaned data file")
 			} else {
 				removed++
 				log.Debug().Str("key", key).Str("subdir", subdir).Msg("removed orphaned data file")
 			}
-			mu.Unlock()
 		}
+		mu.Unlock()
 		return nil
 	})
 	return removed, err
