@@ -75,9 +75,7 @@
     const q = ruleFilter.trim().toLowerCase();
     const indexed = ruleRows.map((row, i) => ({ row, i }));
     if (!q) return indexed;
-    return indexed.filter(
-      ({ row }) => row.pattern.toLowerCase().includes(q) || row.type.includes(q),
-    );
+    return indexed.filter(({ row }) => row.pattern.toLowerCase().includes(q));
   });
 
   onMount(async () => {
