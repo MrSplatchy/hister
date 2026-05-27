@@ -58,7 +58,7 @@ Examples for Chrome: (note that some parts _will_ be different for you!)
 
 ### Auto Detection
 
-Run `hister import-browser auto-detect` with no arguments to auto-detect browser histories. Hister will find histories for Firefox, Firefox Developer Edition, Zen, Waterfox, Chrome, Chromium, Brave, Vivaldi, Edge, Opera and Ladybird if they are in the standard locations.
+Run `hister import-browser` with no arguments to auto-detect browser histories. Hister will find histories for Firefox, Firefox Developer Edition, Zen, Waterfox, Chrome, Chromium, Brave, Vivaldi, Edge, Opera and Ladybird if they are in the standard locations.
 
 ### Manual
 
