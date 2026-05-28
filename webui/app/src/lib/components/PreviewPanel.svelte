@@ -36,8 +36,9 @@
   let versions = $state<DocumentVersion[]>([]);
   let showVersions = $state(false);
   let extractorName = $state('');
-  let defaultExtractor = $state('');
   let availableExtractors = $state<{ name: string; description: string }[]>([]);
+  let extractorsLoaded = $state(false);
+  let extractorsLoading = $state(false);
 
   function parseTemplateData(c: string): any | null {
     try {
@@ -65,9 +66,23 @@
     return new Date(iso).getTime() / 1000;
   }
 
+  // Reset all state when the document URL changes, then load with no explicit extractor.
   $effect(() => {
-    if (url) {
-      loadContent(url, hintTitle, extractorName);
+    const u = url;
+    const hint = hintTitle;
+    if (u) {
+      extractorName = '';
+      availableExtractors = [];
+      extractorsLoaded = false;
+      loadContent(u, hint, '');
+    }
+  });
+
+  // Reload when the user picks a different extractor.
+  $effect(() => {
+    const name = extractorName;
+    if (url && name) {
+      loadContent(url, hintTitle, name);
     }
   });
 
@@ -96,15 +111,28 @@
         template = data.template || '';
         templateData = template === 'video' ? parseTemplateData(data.content) : null;
         content = template === 'video' ? '' : data.content || '<p>No content available</p>';
-        if (data.extractors?.length) {
-          availableExtractors = data.extractors;
-          defaultExtractor = data.extractors[0].name;
-        }
       }
     } catch (err) {
       content = `<p class="text-hister-rose">Failed to load: ${err}</p>`;
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadExtractors(u: string) {
+    if (extractorsLoaded || extractorsLoading) return;
+    extractorsLoading = true;
+    try {
+      const resp = await apiFetch(`/extractors?url=${encodeURIComponent(u)}`);
+      if (resp.ok) {
+        const data: { name: string; description: string }[] = await resp.json();
+        availableExtractors = data ?? [];
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      extractorsLoading = false;
+      extractorsLoaded = true;
     }
   }
 
@@ -209,46 +237,52 @@
         {/if}
       </div>
       <div class="mt-1 flex shrink-0 items-center gap-1">
-        {#if availableExtractors.length}
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger>
-              {#snippet child({ props })}
-                <Button
-                  {...props}
-                  variant="ghost"
-                  size="icon-sm"
-                  class="text-text-brand-muted hover:text-text-brand shrink-0 cursor-pointer"
-                  title="Change extractor"
-                >
-                  <MoreVertical class="size-4" />
-                </Button>
-              {/snippet}
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content
-              class="border-brutal-border bg-card-surface w-44 rounded-none border-[3px] p-3 shadow-[4px_4px_0_var(--brutal-shadow)]"
-            >
-              <div class="space-y-2">
-                <p
-                  class="font-outfit text-text-brand-muted mb-1 text-xs font-bold tracking-widest uppercase"
-                >
-                  Extractor
-                </p>
+        <DropdownMenu.Root
+          onOpenChange={(open) => {
+            if (open) loadExtractors(url);
+          }}
+        >
+          <DropdownMenu.Trigger>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                variant="ghost"
+                size="icon-sm"
+                class="text-text-brand-muted hover:text-text-brand shrink-0 cursor-pointer"
+                title="Change extractor"
+              >
+                <MoreVertical class="size-4" />
+              </Button>
+            {/snippet}
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
+            class="border-brutal-border bg-card-surface w-44 rounded-none border-[3px] p-3 shadow-[4px_4px_0_var(--brutal-shadow)]"
+          >
+            <div class="space-y-2">
+              <p
+                class="font-outfit text-text-brand-muted mb-1 text-xs font-bold tracking-widest uppercase"
+              >
+                Extractor
+              </p>
+              {#if extractorsLoading}
+                <p class="font-inter text-text-brand-muted text-xs">Loading…</p>
+              {:else if availableExtractors.length}
                 <DropdownMenu.RadioGroup
-                  value={extractorName || defaultExtractor}
+                  value={extractorName || availableExtractors[0].name}
                   onValueChange={(v) => {
                     extractorName = v;
                   }}
                 >
                   {#each availableExtractors as ext, i (ext.name)}
-                    <DropdownMenu.RadioItem value={ext.name}
-                      >{ext.name}{i === 0 ? ' (default)' : ''}</DropdownMenu.RadioItem
-                    >
+                    <DropdownMenu.RadioItem value={ext.name}>{ext.name}</DropdownMenu.RadioItem>
                   {/each}
                 </DropdownMenu.RadioGroup>
-              </div>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
-        {/if}
+              {:else}
+                <p class="font-inter text-text-brand-muted text-xs">No extractors available</p>
+              {/if}
+            </div>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
         {#if onfullscreentoggle}
           <Button
             variant="ghost"

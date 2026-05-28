@@ -322,7 +322,10 @@ func init() {
 			CSRFRequired: false,
 			NoAuth:       true,
 			Handler:      serveExtractors,
-			Description:  "List all registered extractors with their name, description, and enabled state",
+			Description:  "List all registered extractors, or just those matching a specific document URL",
+			Args: []*EndpointArg{
+				{Name: "url", Type: "string", Required: false, Description: "If provided, return only extractors that match this indexed document URL"},
+			},
 		},
 		{
 			Name:         "Stats",
