@@ -1218,11 +1218,10 @@ func servePreview(c *webContext) {
 		}
 	}
 	payload := map[string]any{
-		"title":      doc.Title,
-		"content":    resp.Content,
-		"template":   resp.Template,
-		"added":      doc.Added,
-		"extractors": extractor.ListMatching(doc),
+		"title":    doc.Title,
+		"content":  resp.Content,
+		"template": resp.Template,
+		"added":    doc.Added,
 	}
 	if versionCount, err := model.CountDocumentVersions(u, c.UserID); err == nil && versionCount > 0 {
 		payload["version_count"] = versionCount
@@ -1333,6 +1332,16 @@ func serveStats(c *webContext) {
 }
 
 func serveExtractors(c *webContext) {
+	u := c.Request.URL.Query().Get("url")
+	if u != "" {
+		doc := indexer.GetByURLAndUser(u, c.UserID)
+		if doc == nil {
+			serve500(c)
+			return
+		}
+		c.JSON(extractor.ListMatching(doc))
+		return
+	}
 	infos := extractor.List()
 	if !c.Config.App.DisplayExtractorConfig {
 		for i := range infos {

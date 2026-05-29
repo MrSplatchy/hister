@@ -139,7 +139,7 @@ var extractors = []Extractor{
 	&notion.NotionExtractor{},
 	&ytdlp.YtdlpExtractor{},
 	&readabilityExtractor{},
-	&defaultExtractor{},
+	&basicExtractor{},
 }
 
 // Init applies user-supplied extractor configurations on top of each
@@ -231,7 +231,7 @@ func Preview(d *document.Document, name string) (types.PreviewResponse, error) {
 	return types.PreviewResponse{}, ErrNoExtractor
 }
 
-type defaultExtractor struct {
+type basicExtractor struct {
 	cfg *config.Extractor
 }
 
@@ -239,14 +239,14 @@ type readabilityExtractor struct {
 	cfg *config.Extractor
 }
 
-func (e *defaultExtractor) GetConfig() *config.Extractor {
+func (e *basicExtractor) GetConfig() *config.Extractor {
 	if e.cfg == nil {
 		return &config.Extractor{Enable: true, Options: map[string]any{}}
 	}
 	return e.cfg
 }
 
-func (e *defaultExtractor) SetConfig(c *config.Extractor) error {
+func (e *basicExtractor) SetConfig(c *config.Extractor) error {
 	for k := range c.Options {
 		return fmt.Errorf("unknown option %q", k)
 	}
@@ -269,19 +269,19 @@ func (e *readabilityExtractor) SetConfig(c *config.Extractor) error {
 	return nil
 }
 
-func (e *defaultExtractor) Name() string {
-	return "Default"
+func (e *basicExtractor) Name() string {
+	return "Basic"
 }
 
-func (e *defaultExtractor) Description() string {
+func (e *basicExtractor) Description() string {
 	return "Fallback extractor that strips HTML tags and extracts plain text from any web page."
 }
 
-func (e *defaultExtractor) Match(_ *document.Document) bool {
+func (e *basicExtractor) Match(_ *document.Document) bool {
 	return true
 }
 
-func (e *defaultExtractor) Extract(d *document.Document) (types.ExtractorState, error) {
+func (e *basicExtractor) Extract(d *document.Document) (types.ExtractorState, error) {
 	d.Title = ""
 	r := bytes.NewReader([]byte(d.HTML))
 	doc := html.NewTokenizer(r)
@@ -332,7 +332,7 @@ out:
 	return types.ExtractorStop, nil
 }
 
-func (e *defaultExtractor) Preview(d *document.Document) (types.PreviewResponse, types.ExtractorState, error) {
+func (e *basicExtractor) Preview(d *document.Document) (types.PreviewResponse, types.ExtractorState, error) {
 	return types.PreviewResponse{Content: d.Text}, types.ExtractorStop, nil
 }
 

@@ -78,30 +78,140 @@ func init() {
 			Handler:     serveSearch,
 			Description: "Search endpoint. With a query parameter it returns JSON results directly. Without one it upgrades to a WebSocket connection that accepts repeated JSON Query messages and streams back results.",
 			Args: []*EndpointArg{
-				{Name: "q", Type: "string", Required: false, Description: "Plain-text search query"},
-				{Name: "query", Type: "string (JSON)", Required: false, Description: "JSON-encoded Query object; used as an alternative to individual parameters"},
-				{Name: "date_from", Type: "string (YYYY-MM-DD)", Required: false, Description: "Return only results indexed on or after this date"},
-				{Name: "date_to", Type: "string (YYYY-MM-DD)", Required: false, Description: "Return only results indexed on or before this date"},
-				{Name: "include_html", Type: "string (0 or 1)", Required: false, Description: "Include raw HTML in results"},
-				{Name: "page_key", Type: "string", Required: false, Description: "Pagination cursor returned by a previous response"},
-				{Name: "sort", Type: "string", Required: false, Description: "Sort order (e.g. \"date\")"},
-				{Name: "semantic", Type: "string (0/1/true/false)", Required: false, Description: "Enable semantic search"},
-				{Name: "semantic_threshold", Type: "float", Required: false, Description: "Minimum similarity score for semantic results"},
+				{
+					Name:        "q",
+					Type:        "string",
+					Required:    false,
+					Description: "Plain-text search query",
+				},
+				{
+					Name:        "query",
+					Type:        "string (JSON)",
+					Required:    false,
+					Description: "JSON-encoded Query object; used as an alternative to individual parameters",
+				},
+				{
+					Name:        "date_from",
+					Type:        "string (YYYY-MM-DD)",
+					Required:    false,
+					Description: "Return only results indexed on or after this date",
+				},
+				{
+					Name:        "date_to",
+					Type:        "string (YYYY-MM-DD)",
+					Required:    false,
+					Description: "Return only results indexed on or before this date",
+				},
+				{
+					Name:        "include_html",
+					Type:        "string (0 or 1)",
+					Required:    false,
+					Description: "Include raw HTML in results",
+				},
+				{
+					Name:        "page_key",
+					Type:        "string",
+					Required:    false,
+					Description: "Pagination cursor returned by a previous response",
+				},
+				{
+					Name:        "sort",
+					Type:        "string",
+					Required:    false,
+					Description: "Sort order (e.g. \"date\")",
+				},
+				{
+					Name:        "semantic",
+					Type:        "string (0/1/true/false)",
+					Required:    false,
+					Description: "Enable semantic search",
+				},
+				{
+					Name:        "semantic_threshold",
+					Type:        "float",
+					Required:    false,
+					Description: "Minimum similarity score for semantic results",
+				},
 			},
 			JSONSchema: []*JSONSchemaField{
-				{Name: "text", Type: "string", Required: false, Description: "Search query string"},
-				{Name: "date_from", Type: "int64", Required: false, Description: "Unix timestamp lower bound for indexed date"},
-				{Name: "date_to", Type: "int64", Required: false, Description: "Unix timestamp upper bound for indexed date"},
-				{Name: "include_html", Type: "bool", Required: false, Description: "Include raw HTML in results"},
-				{Name: "page_key", Type: "string", Required: false, Description: "Pagination cursor from a previous response"},
-				{Name: "sort", Type: "string", Required: false, Description: "Sort order (e.g. \"date\")"},
-				{Name: "limit", Type: "int", Required: false, Description: "Maximum number of results"},
-				{Name: "highlight", Type: "string", Required: false, Description: "Field to highlight matched terms in"},
-				{Name: "semantic_enabled", Type: "bool", Required: false, Description: "Enable semantic search"},
-				{Name: "semantic_threshold", Type: "float64", Required: false, Description: "Minimum similarity score for semantic results"},
-				{Name: "semantic_weight", Type: "float64", Required: false, Description: "Weight applied to semantic vs full-text scores"},
-				{Name: "facets", Type: "bool", Required: false, Description: "Include facet counts (domain, language) in the response"},
-				{Name: "facet_term_size", Type: "int", Required: false, Description: "Override the default top-N cap for term facets"},
+				{
+					Name:        "text",
+					Type:        "string",
+					Required:    false,
+					Description: "Search query string",
+				},
+				{
+					Name:        "date_from",
+					Type:        "int64",
+					Required:    false,
+					Description: "Unix timestamp lower bound for indexed date",
+				},
+				{
+					Name:        "date_to",
+					Type:        "int64",
+					Required:    false,
+					Description: "Unix timestamp upper bound for indexed date",
+				},
+				{
+					Name:        "include_html",
+					Type:        "bool",
+					Required:    false,
+					Description: "Include raw HTML in results",
+				},
+				{
+					Name:        "page_key",
+					Type:        "string",
+					Required:    false,
+					Description: "Pagination cursor from a previous response",
+				},
+				{
+					Name:        "sort",
+					Type:        "string",
+					Required:    false,
+					Description: "Sort order (e.g. \"date\")",
+				},
+				{
+					Name:        "limit",
+					Type:        "int",
+					Required:    false,
+					Description: "Maximum number of results",
+				},
+				{
+					Name:        "highlight",
+					Type:        "string",
+					Required:    false,
+					Description: "Field to highlight matched terms in",
+				},
+				{
+					Name:        "semantic_enabled",
+					Type:        "bool",
+					Required:    false,
+					Description: "Enable semantic search",
+				},
+				{
+					Name:        "semantic_threshold",
+					Type:        "float64",
+					Required:    false,
+					Description: "Minimum similarity score for semantic results",
+				},
+				{
+					Name:        "semantic_weight",
+					Type:        "float64",
+					Required:    false,
+					Description: "Weight applied to semantic vs full-text scores",
+				},
+				{
+					Name:        "facets",
+					Type:        "bool",
+					Required:    false,
+					Description: "Include facet counts (domain, language) in the response",
+				},
+				{
+					Name:        "facet_term_size",
+					Type:        "int",
+					Required:    false,
+					Description: "Override the default top-N cap for term facets",
+				},
 			},
 		},
 		{
@@ -111,7 +221,12 @@ func init() {
 			Handler:     serveSuggest,
 			Description: "OpenSearch suggestions endpoint; returns query completions",
 			Args: []*EndpointArg{
-				{Name: "q", Type: "string", Required: true, Description: "Partial query string to complete"},
+				{
+					Name:        "q",
+					Type:        "string",
+					Required:    true,
+					Description: "Partial query string to complete",
+				},
 			},
 		},
 		// tmp added for backward compatibility
@@ -131,17 +246,62 @@ func init() {
 			Handler:      serveAdd,
 			Description:  "Index a document. Accepts either application/x-www-form-urlencoded or application/json.",
 			Args: []*EndpointArg{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to index"},
-				{Name: "title", Type: "string", Required: false, Description: "Document title"},
-				{Name: "text", Type: "string", Required: false, Description: "Plain-text content"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to index",
+				},
+				{
+					Name:        "title",
+					Type:        "string",
+					Required:    false,
+					Description: "Document title",
+				},
+				{
+					Name:        "text",
+					Type:        "string",
+					Required:    false,
+					Description: "Plain-text content",
+				},
 			},
 			JSONSchema: []*JSONSchemaField{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to index"},
-				{Name: "title", Type: "string", Required: false, Description: "Document title"},
-				{Name: "text", Type: "string", Required: false, Description: "Plain-text content (overrides server-side HTML extraction)"},
-				{Name: "html", Type: "string", Required: false, Description: "Raw HTML source (text is extracted server-side)"},
-				{Name: "favicon", Type: "string", Required: false, Description: "Base64-encoded favicon data URI"},
-				{Name: "label", Type: "string", Required: false, Description: "User-defined label for the document"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to index",
+				},
+				{
+					Name:        "title",
+					Type:        "string",
+					Required:    false,
+					Description: "Document title",
+				},
+				{
+					Name:        "text",
+					Type:        "string",
+					Required:    false,
+					Description: "Plain-text content (overrides server-side HTML extraction)",
+				},
+				{
+					Name:        "html",
+					Type:        "string",
+					Required:    false,
+					Description: "Raw HTML source (text is extracted server-side)",
+				},
+				{
+					Name:        "favicon",
+					Type:        "string",
+					Required:    false,
+					Description: "Base64-encoded favicon data URI",
+				},
+				{
+					Name:        "label",
+					Type:        "string",
+					Required:    false,
+					Description: "User-defined label for the document",
+				},
 			},
 		},
 		// alias for /api/add - backward compatibility - use /api/add in the future
@@ -153,16 +313,56 @@ func init() {
 			Handler:      serveAdd,
 			Description:  "Index a document (legacy path; prefer /api/add)",
 			Args: []*EndpointArg{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to index"},
-				{Name: "title", Type: "string", Required: false, Description: "Document title"},
-				{Name: "text", Type: "string", Required: false, Description: "Plain-text content"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to index",
+				},
+				{
+					Name:        "title",
+					Type:        "string",
+					Required:    false,
+					Description: "Document title",
+				},
+				{
+					Name:        "text",
+					Type:        "string",
+					Required:    false,
+					Description: "Plain-text content",
+				},
 			},
 			JSONSchema: []*JSONSchemaField{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to index"},
-				{Name: "title", Type: "string", Required: false, Description: "Document title"},
-				{Name: "text", Type: "string", Required: false, Description: "Plain-text content (overrides server-side HTML extraction)"},
-				{Name: "html", Type: "string", Required: false, Description: "Raw HTML source (text is extracted server-side)"},
-				{Name: "favicon", Type: "string", Required: false, Description: "Base64-encoded favicon data URI"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to index",
+				},
+				{
+					Name:        "title",
+					Type:        "string",
+					Required:    false,
+					Description: "Document title",
+				},
+				{
+					Name:        "text",
+					Type:        "string",
+					Required:    false,
+					Description: "Plain-text content (overrides server-side HTML extraction)",
+				},
+				{
+					Name:        "html",
+					Type:        "string",
+					Required:    false,
+					Description: "Raw HTML source (text is extracted server-side)",
+				},
+				{
+					Name:        "favicon",
+					Type:        "string",
+					Required:    false,
+					Description: "Base64-encoded favicon data URI",
+				},
 			},
 		},
 		{
@@ -179,12 +379,32 @@ func init() {
 					Required:    true,
 					Description: "Document metadata",
 					Fields: []*JSONSchemaField{
-						{Name: "url", Type: "string", Required: true, Description: "URL or file:// URI identifying the PDF"},
-						{Name: "title", Type: "string", Required: false, Description: "Document title"},
-						{Name: "label", Type: "string", Required: false, Description: "User-defined label"},
+						{
+							Name:        "url",
+							Type:        "string",
+							Required:    true,
+							Description: "URL or file:// URI identifying the PDF",
+						},
+						{
+							Name:        "title",
+							Type:        "string",
+							Required:    false,
+							Description: "Document title",
+						},
+						{
+							Name:        "label",
+							Type:        "string",
+							Required:    false,
+							Description: "User-defined label",
+						},
 					},
 				},
-				{Name: "pdf", Type: "string", Required: true, Description: "Base64-encoded PDF binary content"},
+				{
+					Name:        "pdf",
+					Type:        "string",
+					Required:    true,
+					Description: "Base64-encoded PDF binary content",
+				},
 			},
 		},
 		{
@@ -195,8 +415,18 @@ func init() {
 			Handler:      serveUpdateLabel,
 			Description:  "Update (or clear) the user-defined label of a stored document",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to label"},
-				{Name: "label", Type: "string", Required: false, Description: "New label value; pass empty string to clear"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to label",
+				},
+				{
+					Name:        "label",
+					Type:        "string",
+					Required:    false,
+					Description: "New label value; pass empty string to clear",
+				},
 			},
 		},
 		{
@@ -207,7 +437,12 @@ func init() {
 			Handler:      serveVersions,
 			Description:  "Return all stored version diffs for a document URL. Versions are recorded when the URL matches a versioning rule and the document is re-indexed.",
 			Args: []*EndpointArg{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to retrieve versions for"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to retrieve versions for",
+				},
 			},
 		},
 		{
@@ -218,7 +453,12 @@ func init() {
 			Handler:      serveGet,
 			Description:  "Retrieve a stored document by its URL",
 			Args: []*EndpointArg{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document",
+				},
 			},
 		},
 		{
@@ -237,9 +477,24 @@ func init() {
 			Handler:      serveRules,
 			Description:  "Update skip/priority/versioning rules. Accepts application/x-www-form-urlencoded.",
 			Args: []*EndpointArg{
-				{Name: "skip", Type: "string", Required: false, Description: "Space-separated list of URL regex patterns to skip during indexing"},
-				{Name: "priority", Type: "string", Required: false, Description: "Space-separated list of URL regex patterns to surface first in results"},
-				{Name: "versioning", Type: "string", Required: false, Description: "Space-separated list of URL regex patterns for which document versions are tracked"},
+				{
+					Name:        "skip",
+					Type:        "string",
+					Required:    false,
+					Description: "Space-separated list of URL regex patterns to skip during indexing",
+				},
+				{
+					Name:        "priority",
+					Type:        "string",
+					Required:    false,
+					Description: "Space-separated list of URL regex patterns to surface first in results",
+				},
+				{
+					Name:        "versioning",
+					Type:        "string",
+					Required:    false,
+					Description: "Space-separated list of URL regex patterns for which document versions are tracked",
+				},
 			},
 		},
 		{
@@ -250,9 +505,24 @@ func init() {
 			Handler:      serveHistory,
 			Description:  "Retrieve recently indexed documents or search query history",
 			Args: []*EndpointArg{
-				{Name: "opened", Type: "bool", Required: false, Description: "When \"true\", returns search query history instead of recently indexed documents"},
-				{Name: "last_id", Type: "uint", Required: false, Description: "Pagination cursor: last history item ID from a previous response (used with opened=true)"},
-				{Name: "last", Type: "string", Required: false, Description: "Pagination cursor: URL of the last indexed document from a previous response"},
+				{
+					Name:        "opened",
+					Type:        "bool",
+					Required:    false,
+					Description: "When \"true\", returns search query history instead of recently indexed documents",
+				},
+				{
+					Name:        "last_id",
+					Type:        "uint",
+					Required:    false,
+					Description: "Pagination cursor: last history item ID from a previous response (used with opened=true)",
+				},
+				{
+					Name:        "last",
+					Type:        "string",
+					Required:    false,
+					Description: "Pagination cursor: URL of the last indexed document from a previous response",
+				},
 			},
 		},
 		{
@@ -263,10 +533,30 @@ func init() {
 			Handler:      serveSaveHistory,
 			Description:  "Record or delete a search query history entry",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "url", Type: "string", Required: false, Description: "URL of the visited page"},
-				{Name: "title", Type: "string", Required: false, Description: "Page title"},
-				{Name: "query", Type: "string", Required: false, Description: "Search query string that led to this page"},
-				{Name: "delete", Type: "bool", Required: false, Description: "When true, removes the matching history entry instead of adding one"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    false,
+					Description: "URL of the visited page",
+				},
+				{
+					Name:        "title",
+					Type:        "string",
+					Required:    false,
+					Description: "Page title",
+				},
+				{
+					Name:        "query",
+					Type:        "string",
+					Required:    false,
+					Description: "Search query string that led to this page",
+				},
+				{
+					Name:        "delete",
+					Type:        "bool",
+					Required:    false,
+					Description: "When true, removes the matching history entry instead of adding one",
+				},
 			},
 		},
 		{
@@ -277,7 +567,12 @@ func init() {
 			Handler:      serveDelete,
 			Description:  "Delete documents matching a search query. Non-admin users are restricted to their own documents.",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "query", Type: "string", Required: true, Description: "Search query string selecting documents to delete (same syntax as the search endpoint)"},
+				{
+					Name:        "query",
+					Type:        "string",
+					Required:    true,
+					Description: "Search query string selecting documents to delete (same syntax as the search endpoint)",
+				},
 			},
 		},
 		{
@@ -288,7 +583,12 @@ func init() {
 			Handler:      serveDeleteAlias,
 			Description:  "Remove a query alias",
 			Args: []*EndpointArg{
-				{Name: "alias", Type: "string", Required: true, Description: "Alias keyword to remove"},
+				{
+					Name:        "alias",
+					Type:        "string",
+					Required:    true,
+					Description: "Alias keyword to remove",
+				},
 			},
 		},
 		{
@@ -299,8 +599,18 @@ func init() {
 			Handler:      serveAddAlias,
 			Description:  "Add or update a query alias",
 			Args: []*EndpointArg{
-				{Name: "alias-keyword", Type: "string", Required: true, Description: "Shorthand keyword the user types in search"},
-				{Name: "alias-value", Type: "string", Required: true, Description: "Expanded query expression that the keyword maps to"},
+				{
+					Name:        "alias-keyword",
+					Type:        "string",
+					Required:    true,
+					Description: "Shorthand keyword the user types in search",
+				},
+				{
+					Name:        "alias-value",
+					Type:        "string",
+					Required:    true,
+					Description: "Expanded query expression that the keyword maps to",
+				},
 			},
 		},
 		{
@@ -311,8 +621,18 @@ func init() {
 			Handler:      servePreview,
 			Description:  "Render a readable preview of a stored document",
 			Args: []*EndpointArg{
-				{Name: "url", Type: "string", Required: true, Description: "URL of the document to preview"},
-				{Name: "extractor", Type: "string", Required: false, Description: "Name of the extractor to use (case-insensitive); omit to use the default chain"},
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    true,
+					Description: "URL of the document to preview",
+				},
+				{
+					Name:        "extractor",
+					Type:        "string",
+					Required:    false,
+					Description: "Name of the extractor to use (case-insensitive); omit to use the default chain",
+				},
 			},
 		},
 		{
@@ -322,7 +642,15 @@ func init() {
 			CSRFRequired: false,
 			NoAuth:       true,
 			Handler:      serveExtractors,
-			Description:  "List all registered extractors with their name, description, and enabled state",
+			Description:  "List all registered extractors, or just those matching a specific document URL",
+			Args: []*EndpointArg{
+				{
+					Name:        "url",
+					Type:        "string",
+					Required:    false,
+					Description: "If provided, return only extractors that match this indexed document URL",
+				},
+			},
 		},
 		{
 			Name:         "Stats",
@@ -340,7 +668,12 @@ func init() {
 			Handler:      serveFile,
 			Description:  "Serve the raw content of a locally indexed file",
 			Args: []*EndpointArg{
-				{Name: "path", Type: "string", Required: true, Description: "Absolute path to the file"},
+				{
+					Name:        "path",
+					Type:        "string",
+					Required:    true,
+					Description: "Absolute path to the file",
+				},
 			},
 		},
 		{
@@ -357,12 +690,42 @@ func init() {
 					Required:    true,
 					Description: "List of operations to execute (maximum 100)",
 					Fields: []*JSONSchemaField{
-						{Name: "op", Type: "string", Required: true, Description: "Operation type: \"add\", \"delete\", or \"get\""},
-						{Name: "url", Type: "string", Required: true, Description: "Document URL"},
-						{Name: "title", Type: "string", Required: false, Description: "Document title (add only)"},
-						{Name: "text", Type: "string", Required: false, Description: "Plain-text content (add only)"},
-						{Name: "html", Type: "string", Required: false, Description: "Raw HTML source (add only; text extracted server-side)"},
-						{Name: "favicon", Type: "string", Required: false, Description: "Base64-encoded favicon data URI (add only)"},
+						{
+							Name:        "op",
+							Type:        "string",
+							Required:    true,
+							Description: "Operation type: \"add\", \"delete\", or \"get\"",
+						},
+						{
+							Name:        "url",
+							Type:        "string",
+							Required:    true,
+							Description: "Document URL",
+						},
+						{
+							Name:        "title",
+							Type:        "string",
+							Required:    false,
+							Description: "Document title (add only)",
+						},
+						{
+							Name:        "text",
+							Type:        "string",
+							Required:    false,
+							Description: "Plain-text content (add only)",
+						},
+						{
+							Name:        "html",
+							Type:        "string",
+							Required:    false,
+							Description: "Raw HTML source (add only; text extracted server-side)",
+						},
+						{
+							Name:        "favicon",
+							Type:        "string",
+							Required:    false,
+							Description: "Base64-encoded favicon data URI (add only)",
+						},
 					},
 				},
 			},
@@ -385,8 +748,18 @@ func init() {
 			Handler:      serveReindex,
 			Description:  "Rebuild the search index from all stored documents (admin only)",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "skipSensitive", Type: "bool", Required: false, Description: "Skip documents that match sensitive-content patterns"},
-				{Name: "detectLanguages", Type: "bool", Required: false, Description: "Enable per-language index routing during reindex"},
+				{
+					Name:        "skipSensitive",
+					Type:        "bool",
+					Required:    false,
+					Description: "Skip documents that match sensitive-content patterns",
+				},
+				{
+					Name:        "detectLanguages",
+					Type:        "bool",
+					Required:    false,
+					Description: "Enable per-language index routing during reindex",
+				},
 			},
 		},
 		{
@@ -406,8 +779,18 @@ func init() {
 			Handler:      serveLogin,
 			Description:  "Authenticate with username and password and create a session",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "username", Type: "string", Required: true, Description: "Account username"},
-				{Name: "password", Type: "string", Required: true, Description: "Account password"},
+				{
+					Name:        "username",
+					Type:        "string",
+					Required:    true,
+					Description: "Account username",
+				},
+				{
+					Name:        "password",
+					Type:        "string",
+					Required:    true,
+					Description: "Account password",
+				},
 			},
 		},
 		{
@@ -441,24 +824,54 @@ func init() {
 			Handler:     serveMCP,
 			Description: "Model Context Protocol endpoint (JSON-RPC 2.0 / Streamable HTTP). Exposes the search tool to AI assistants.",
 			JSONSchema: []*JSONSchemaField{
-				{Name: "jsonrpc", Type: "string", Required: true, Description: "JSON-RPC version; must be \"2.0\""},
-				{Name: "id", Type: "string | number | null", Required: false, Description: "Request identifier; omit for notifications"},
-				{Name: "method", Type: "string", Required: true, Description: "RPC method name (e.g. \"tools/call\", \"initialize\", \"tools/list\")"},
+				{
+					Name:        "jsonrpc",
+					Type:        "string",
+					Required:    true,
+					Description: "JSON-RPC version; must be \"2.0\"",
+				},
+				{
+					Name:        "id",
+					Type:        "string | number | null",
+					Required:    false,
+					Description: "Request identifier; omit for notifications",
+				},
+				{
+					Name:        "method",
+					Type:        "string",
+					Required:    true,
+					Description: "RPC method name (e.g. \"tools/call\", \"initialize\", \"tools/list\")",
+				},
 				{
 					Name:        "params",
 					Type:        "object",
 					Required:    false,
 					Description: "Method parameters; shape depends on the method",
 					Fields: []*JSONSchemaField{
-						{Name: "name", Type: "string", Required: true, Description: "Tool name; must be \"search\" for tools/call"},
+						{
+							Name:        "name",
+							Type:        "string",
+							Required:    true,
+							Description: "Tool name; must be \"search\" for tools/call",
+						},
 						{
 							Name:        "arguments",
 							Type:        "object",
 							Required:    false,
 							Description: "Tool arguments for tools/call",
 							Fields: []*JSONSchemaField{
-								{Name: "query", Type: "string", Required: true, Description: "Search query string"},
-								{Name: "limit", Type: "int", Required: false, Description: "Maximum number of results (default 10)"},
+								{
+									Name:        "query",
+									Type:        "string",
+									Required:    true,
+									Description: "Search query string",
+								},
+								{
+									Name:        "limit",
+									Type:        "int",
+									Required:    false,
+									Description: "Maximum number of results (default 10)",
+								},
 							},
 						},
 					},
@@ -473,7 +886,12 @@ func init() {
 			Handler:     serveOAuthRedirect,
 			Description: "Start OAuth authentication flow for a given provider",
 			Args: []*EndpointArg{
-				{Name: "provider", Type: "string", Required: true, Description: "OAuth provider name (github, google, oidc)"},
+				{
+					Name:        "provider",
+					Type:        "string",
+					Required:    true,
+					Description: "OAuth provider name (github, google, oidc)",
+				},
 			},
 		},
 		{
@@ -484,9 +902,24 @@ func init() {
 			Handler:     serveOAuthCallback,
 			Description: "OAuth provider callback handler",
 			Args: []*EndpointArg{
-				{Name: "provider", Type: "string", Required: true, Description: "OAuth provider name"},
-				{Name: "code", Type: "string", Required: true, Description: "Authorization code returned by the provider"},
-				{Name: "state", Type: "string", Required: true, Description: "CSRF state token issued during the redirect step"},
+				{
+					Name:        "provider",
+					Type:        "string",
+					Required:    true,
+					Description: "OAuth provider name",
+				},
+				{
+					Name:        "code",
+					Type:        "string",
+					Required:    true,
+					Description: "Authorization code returned by the provider",
+				},
+				{
+					Name:        "state",
+					Type:        "string",
+					Required:    true,
+					Description: "CSRF state token issued during the redirect step",
+				},
 			},
 		},
 	}
