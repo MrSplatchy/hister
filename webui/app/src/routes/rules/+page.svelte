@@ -11,7 +11,19 @@
   import { Badge } from '@hister/components/ui/badge';
   import * as Card from '@hister/components/ui/card';
   import * as Table from '@hister/components/ui/table';
-  import { Shield, Link2, Plus, Trash2, Pencil, Check, X, Search } from '@lucide/svelte';
+  import {
+    Shield,
+    Link2,
+    Plus,
+    Trash2,
+    Pencil,
+    Check,
+    X,
+    Search,
+    ChevronsUpDown,
+    ChevronUp,
+    ChevronDown,
+  } from '@lucide/svelte';
   import { PageHeader } from '@hister/components';
   import { Label } from '@hister/components/ui/label';
   import * as Alert from '@hister/components/ui/alert';
@@ -56,6 +68,26 @@
   let ruleFilterOpen = $state(false);
   let ruleFilter = $state('');
 
+  // Sort state
+  class SortState<C extends string> {
+    col = $state<C | null>(null);
+    dir = $state<'asc' | 'desc'>('asc');
+    toggle(col: C) {
+      if (this.col === col) {
+        if (this.dir === 'asc') this.dir = 'desc';
+        else {
+          this.col = null;
+          this.dir = 'asc';
+        }
+      } else {
+        this.col = col;
+        this.dir = 'asc';
+      }
+    }
+  }
+  const aliasSort = new SortState<'keyword' | 'value'>();
+  const ruleSort = new SortState<'pattern' | 'type'>();
+
   const ruleRows = $derived.by(() => {
     const rows: RuleRow[] = [];
     for (const p of rules.skip) rows.push({ pattern: p, type: 'skip' });
@@ -76,6 +108,28 @@
     const indexed = ruleRows.map((row, i) => ({ row, i }));
     if (!q) return indexed;
     return indexed.filter(({ row }) => row.pattern.toLowerCase().includes(q));
+  });
+
+  const sortedAliases = $derived.by(() => {
+    const arr = [...filteredAliases];
+    if (!aliasSort.col) return arr;
+    const { col, dir } = aliasSort;
+    return arr.sort((a, b) => {
+      const va = col === 'keyword' ? a[0] : a[1];
+      const vb = col === 'keyword' ? b[0] : b[1];
+      return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+  });
+
+  const sortedRuleRows = $derived.by(() => {
+    const arr = [...filteredRuleRows];
+    if (!ruleSort.col) return arr;
+    const { col, dir } = ruleSort;
+    return arr.sort((a, b) => {
+      const va = col === 'pattern' ? a.row.pattern : a.row.type;
+      const vb = col === 'pattern' ? b.row.pattern : b.row.type;
+      return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
   });
 
   onMount(async () => {
@@ -370,6 +424,33 @@
     {/if}
   {/snippet}
 
+  {#snippet sortableHead(
+    label: string,
+    col: string,
+    sortCol: string | null,
+    sortDir: 'asc' | 'desc',
+    onToggle: () => void,
+    headClass: string,
+  )}
+    <Table.Head class={headClass}>
+      <button
+        class="flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 font-[inherit] text-[inherit] tracking-[inherit] uppercase hover:opacity-100 opacity-80"
+        onclick={onToggle}
+      >
+        {label}
+        {#if sortCol === col}
+          {#if sortDir === 'asc'}
+            <ChevronUp class="size-3 shrink-0" />
+          {:else}
+            <ChevronDown class="size-3 shrink-0" />
+          {/if}
+        {:else}
+          <ChevronsUpDown class="size-3 shrink-0 opacity-50" />
+        {/if}
+      </button>
+    </Table.Head>
+  {/snippet}
+
   {#snippet editCancelButtons(onSave: () => void, onCancel: () => void)}
     <div class="flex items-center gap-1">
       <Button
@@ -479,14 +560,22 @@
               <Table.Row
                 class="bg-muted-surface border-brutal-border hover:bg-muted-surface border-b-[3px]"
               >
-                <Table.Head
-                  class="font-space text-text-brand-muted h-auto w-20 px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:w-35 md:px-5"
-                  >Keyword</Table.Head
-                >
-                <Table.Head
-                  class="font-space text-text-brand-muted h-auto px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:px-5"
-                  >Expands to</Table.Head
-                >
+                {@render sortableHead(
+                  'Keyword',
+                  'keyword',
+                  aliasSort.col,
+                  aliasSort.dir,
+                  () => aliasSort.toggle('keyword'),
+                  'font-space text-text-brand-muted h-auto w-20 px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:w-35 md:px-5',
+                )}
+                {@render sortableHead(
+                  'Expands to',
+                  'value',
+                  aliasSort.col,
+                  aliasSort.dir,
+                  () => aliasSort.toggle('value'),
+                  'font-space text-text-brand-muted h-auto px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:px-5',
+                )}
                 <Table.Head class="h-auto w-16 px-2 py-3 md:w-20 md:px-5">
                   {@render filterToggleButton('bg-hister-indigo text-background', () => {
                     aliasFilterOpen = !aliasFilterOpen;
@@ -503,7 +592,7 @@
               )}
             </Table.Header>
             <Table.Body>
-              {#each filteredAliases as [keyword, value]}
+              {#each sortedAliases as [keyword, value]}
                 <Table.Row class="border-brutal-border border-b-[3px]">
                   {#if editingAliasKey === keyword}
                     <Table.Cell class="px-2 py-2 md:px-3" colspan={2}>
@@ -551,7 +640,7 @@
             </Table.Body>
           </Table.Root>
 
-          {#if filteredAliases.length === 0}
+          {#if sortedAliases.length === 0}
             <div class="flex flex-col items-center justify-center gap-3 py-10">
               <div
                 class="flex h-12 w-12 items-center justify-center"
@@ -632,14 +721,22 @@
               <Table.Row
                 class="bg-muted-surface border-brutal-border hover:bg-muted-surface border-b-[3px]"
               >
-                <Table.Head
-                  class="font-space text-text-brand-muted h-auto px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:px-5"
-                  >Pattern</Table.Head
-                >
-                <Table.Head
-                  class="font-space text-text-brand-muted h-auto w-20 px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:w-28 md:px-5"
-                  >Type</Table.Head
-                >
+                {@render sortableHead(
+                  'Pattern',
+                  'pattern',
+                  ruleSort.col,
+                  ruleSort.dir,
+                  () => ruleSort.toggle('pattern'),
+                  'font-space text-text-brand-muted h-auto px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:px-5',
+                )}
+                {@render sortableHead(
+                  'Type',
+                  'type',
+                  ruleSort.col,
+                  ruleSort.dir,
+                  () => ruleSort.toggle('type'),
+                  'font-space text-text-brand-muted h-auto w-20 px-2 py-3 text-xs font-bold tracking-[1px] uppercase md:w-28 md:px-5',
+                )}
                 <Table.Head class="h-auto w-16 px-2 py-3 md:w-20 md:px-5">
                   {@render filterToggleButton('bg-hister-coral text-background', () => {
                     ruleFilterOpen = !ruleFilterOpen;
@@ -656,7 +753,7 @@
               )}
             </Table.Header>
             <Table.Body>
-              {#each filteredRuleRows as { row, i }}
+              {#each sortedRuleRows as { row, i }}
                 <Table.Row class="border-brutal-border border-b-[3px]">
                   {#if editingRuleIndex === i}
                     <Table.Cell class="px-2 py-2 md:px-3" colspan={2}>
@@ -715,7 +812,7 @@
             </Table.Body>
           </Table.Root>
 
-          {#if filteredRuleRows.length === 0}
+          {#if sortedRuleRows.length === 0}
             <div class="flex flex-col items-center justify-center gap-3 py-10">
               <div
                 class="flex h-12 w-12 items-center justify-center"

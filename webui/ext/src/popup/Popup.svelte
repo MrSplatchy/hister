@@ -298,9 +298,13 @@
   >
     <a
       href={url}
-      onclick={(e) => { e.preventDefault(); chrome.tabs.create({ url }); }}
+      onclick={(e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url });
+      }}
       class="font-outfit text-lg font-black tracking-widest text-white uppercase hover:underline cursor-pointer"
-    >Hister</a>
+      >Hister</a
+    >
     <div class="flex items-center gap-2">
       <button
         onclick={toggleSettings}
