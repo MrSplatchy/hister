@@ -296,7 +296,11 @@
   <div
     class="bg-hister-indigo/90 border-brutal-border flex items-center justify-between border-b-[3px] px-5 py-3"
   >
-    <span class="font-outfit text-lg font-black tracking-widest text-white uppercase">Hister</span>
+    <a
+      href={url}
+      onclick={(e) => { e.preventDefault(); chrome.tabs.create({ url }); }}
+      class="font-outfit text-lg font-black tracking-widest text-white uppercase hover:underline cursor-pointer"
+    >Hister</a>
     <div class="flex items-center gap-2">
       <button
         onclick={toggleSettings}
