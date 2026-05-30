@@ -683,24 +683,32 @@ func (i *indexer) countKeyRefs(field, key string) uint64 {
 // and stores their SHA-256 hash keys on the document, clearing the inline fields
 // so that large blobs are not persisted inside the Bleve index.
 // When disablePreviews is true, HTML is discarded entirely and HTMLKey is cleared.
+// Inline blobs are cleared whenever a key is set, so they are never written into
+// the Bleve index DB (e.g. during reindex where resFromHit populates both fields).
 func (i *indexer) prepareForStorage(d *document.Document) error {
 	if i.disablePreviews {
 		d.HTML = ""
 		d.HTMLKey = ""
-	} else if d.HTML != "" && d.HTMLKey == "" {
-		key, err := i.data.write(htmlSubdir, []byte(d.HTML))
-		if err != nil {
-			return fmt.Errorf("store HTML: %w", err)
+	} else {
+		if d.HTML != "" {
+			key, err := i.data.write(htmlSubdir, []byte(d.HTML))
+			if err != nil {
+				return fmt.Errorf("store HTML: %w", err)
+			}
+			d.HTMLKey = key
 		}
-		d.HTMLKey = key
-		d.HTML = ""
+		if d.HTMLKey != "" {
+			d.HTML = ""
+		}
 	}
-	if d.Favicon != "" && d.FaviconKey == "" {
+	if d.Favicon != "" {
 		key, err := i.data.write(faviconSubdir, []byte(d.Favicon))
 		if err != nil {
 			return fmt.Errorf("store favicon: %w", err)
 		}
 		d.FaviconKey = key
+	}
+	if d.FaviconKey != "" {
 		d.Favicon = ""
 	}
 	return nil
