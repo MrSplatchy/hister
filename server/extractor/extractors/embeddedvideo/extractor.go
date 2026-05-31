@@ -200,19 +200,6 @@ func readAttrs(z *html.Tokenizer, hasAttr bool) map[string]string {
 	return attrs
 }
 
-// attrVal reads all attributes from the current token and returns the value
-// of the requested key (case-insensitive), or "" if not present.
-func attrVal(z *html.Tokenizer, hasAttr bool, wantKey string) string {
-	for hasAttr {
-		var k, v []byte
-		k, v, hasAttr = z.TagAttr()
-		if strings.EqualFold(string(k), wantKey) {
-			return string(v)
-		}
-	}
-	return ""
-}
-
 // isVideoEmbedURL returns true when the URL matches a known video
 // hosting / embed service by full https:// prefix.
 func isVideoEmbedURL(u string) bool {
