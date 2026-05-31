@@ -77,7 +77,7 @@ type Query struct {
 	PageKey           string  `json:"page_key"`
 	IncludeHTML       bool    `json:"include_html"`
 	IncludeText       bool    `json:"include_text"`
-	Facets bool `json:"facets,omitempty"`
+	Facets            bool    `json:"facets,omitempty"`
 	// FacetSizes overrides the default top-N cap per named facet.
 	// Key is the facet name (e.g. "domains", "languages"); zero/missing
 	// values fall back to defaultFacetTermSize.
