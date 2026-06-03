@@ -1,5 +1,6 @@
 <script lang="ts">
   import Download from '@lucide/svelte/icons/download';
+  import GitPullRequest from '@lucide/svelte/icons/git-pull-request';
   import Search from '@lucide/svelte/icons/search';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   import X from '@lucide/svelte/icons/x';
@@ -16,6 +17,17 @@
   let selectedLicense = $state('');
   let selectedAuthor = $state('');
   let mobileFiltersOpen = $state(false);
+  let submitModalOpen = $state(false);
+
+  const sampleJson = `{
+  "name": "My Dataset Name",
+  "description": "A brief description of what the dataset contains.",
+  "downloadUrl": "https://example.com/path/to/dataset.json",
+  "image": null,
+  "tags": ["tag1", "tag2"],
+  "license": "CC-BY 4.0",
+  "author": "Your Name"
+}`;
 
   function matchesQuery(d: Dataset, q: string): boolean {
     return (
@@ -126,10 +138,10 @@
       Datasets
     </h1>
     <p class="font-inter mt-3 max-w-[70em] text-base text-(--text-secondary)">
-      Public datasets you can import into Hister to extend your local index. <a
-        href="https://github.com/asciimoo/hister"
-        class="font-space border-brutal-border brutal-press border-[2px] bg-(--hister-cyan) px-4 py-2.5 text-[12px] font-bold tracking-[1px] text-white uppercase no-underline"
-        >Submit new dataset</a
+      Public datasets you can import into Hister to extend your local index. <button
+        onclick={() => (submitModalOpen = true)}
+        class="font-space border-brutal-border brutal-press cursor-pointer border-[2px] bg-(--hister-cyan) px-4 py-2.5 text-[12px] font-bold tracking-[1px] text-white uppercase"
+        >Submit new dataset</button
       >
     </p>
   </div>
@@ -401,3 +413,95 @@
     </div>
   </div>
 </div>
+
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key === 'Escape' && submitModalOpen) submitModalOpen = false;
+  }}
+/>
+
+<!-- Submit dataset modal -->
+{#if submitModalOpen}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 md:p-10"
+    onclick={() => (submitModalOpen = false)}
+    onkeydown={(e) => {
+      if (e.key === 'Escape') submitModalOpen = false;
+    }}
+  >
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="submit-modal-title"
+      tabindex="-1"
+      class="border-brutal-border relative my-auto w-full max-w-2xl border-[3px] bg-brutal-card shadow-[8px_8px_0_var(--brutal-border)]"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+    >
+      <!-- Header -->
+      <div class="border-brutal-border flex items-center justify-between border-b-[3px] px-6 py-4">
+        <h2
+          id="submit-modal-title"
+          class="font-space text-xl font-black tracking-[0.5px] text-(--text-primary) uppercase"
+        >
+          Submit a New Dataset
+        </h2>
+        <button
+          onclick={() => (submitModalOpen = false)}
+          aria-label="Close"
+          class="cursor-pointer text-(--text-secondary) transition-colors hover:text-(--text-primary)"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex flex-col gap-6 px-6 py-6">
+        <a
+          href="https://github.com/asciimoo/hister"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-space border-brutal-border brutal-press flex w-full self-start justify-center items-center gap-2 border-[2px] bg-(--hister-indigo) px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white uppercase no-underline"
+        >
+          <GitPullRequest size={14} class="shrink-0" />
+          Open a Pull Request
+        </a>
+        <p class="font-inter text-sm leading-relaxed text-(--text-secondary)">
+          To add your dataset to this page, open a pull request on
+          <a
+            href="https://github.com/asciimoo/hister"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-(--text-primary) underline">github.com/asciimoo/hister</a
+          >
+          and add a JSON file at
+          <code class="bg-(--muted-surface) px-1 py-0.5 text-[12px] text-(--text-primary)"
+            >webui/website/src/content/datasets/your-dataset-name.json</code
+          >
+          following the format below.
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <span
+            class="font-space text-[11px] font-bold tracking-[1.5px] text-(--text-secondary) uppercase"
+            >JSON Format</span
+          >
+          <pre
+            class="border-brutal-border overflow-x-auto border-[2px] bg-black p-4 text-[13px] leading-relaxed text-green-400">{sampleJson}</pre>
+        </div>
+
+        <dl class="font-inter grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-sm">
+          {#each [['name', 'Display name of the dataset (string, required)'], ['description', 'Short description of the dataset contents (string, required)'], ['downloadUrl', 'Direct URL to the dataset JSON file (string, required)'], ['image', 'Optional cover image URL, or null (string | null)'], ['tags', 'List of topic tags (string[], required)'], ['license', 'License identifier, e.g. "CC-BY 4.0" (string, required)'], ['author', 'Name of the dataset author or publisher (string, required)']] as [field, desc]}
+            <dt
+              class="font-space font-semibold tracking-[0.5px] text-(--text-primary) whitespace-nowrap"
+            >
+              {field}
+            </dt>
+            <dd class="text-(--text-secondary) m-0">{desc}</dd>
+          {/each}
+        </dl>
+      </div>
+    </div>
+  </div>
+{/if}
