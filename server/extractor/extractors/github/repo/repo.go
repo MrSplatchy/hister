@@ -23,10 +23,6 @@ const (
 	githubURLPrefix = githubBase + "/"
 )
 
-// relativeURLRe matches src="/" or href="/" attributes with root-relative paths
-// (but not protocol-relative URLs starting with "//").
-var relativeURLRe = regexp.MustCompile(`(?i)((?:src|href)=")(\/[^/"])`)
-
 // githubSystemPaths are top-level GitHub path segments that are never
 // repository owner namespaces.
 var githubSystemPaths = map[string]bool{
@@ -54,27 +50,25 @@ var githubSystemPaths = map[string]bool{
 	"apps":           true,
 }
 
-var starsRe = regexp.MustCompile(`^([\d,]+)\s+users?\s+starred\s+this\s+repository$`)
-
 // GitHubExtractor extracts project details and README content from GitHub repository pages.
-type GitHubExtractor struct {
+type GitHubRepoExtractor struct {
 	cfg *config.Extractor
 }
 
-func (e *GitHubExtractor) Name() string { return "GitHub" }
+func (e *GitHubRepoExtractor) Name() string { return "GitHub" }
 
-func (e *GitHubExtractor) Description() string {
+func (e *GitHubRepoExtractor) Description() string {
 	return "Extracts repository metadata (description, stars, topics, languages) and README content from GitHub project pages."
 }
 
-func (e *GitHubExtractor) GetConfig() *config.Extractor {
+func (e *GitHubRepoExtractor) GetConfig() *config.Extractor {
 	if e.cfg == nil {
 		return &config.Extractor{Enable: true, Options: map[string]any{}}
 	}
 	return e.cfg
 }
 
-func (e *GitHubExtractor) SetConfig(c *config.Extractor) error {
+func (e *GitHubRepoExtractor) SetConfig(c *config.Extractor) error {
 	for k := range c.Options {
 		return fmt.Errorf("unknown option %q", k)
 	}
@@ -84,7 +78,7 @@ func (e *GitHubExtractor) SetConfig(c *config.Extractor) error {
 
 // Match returns true for github.com/{owner}/{repo} URLs, excluding known
 // GitHub system path prefixes.
-func (e *GitHubExtractor) Match(d *document.Document) bool {
+func (e *GitHubRepoExtractor) Match(d *document.Document) bool {
 	if !strings.HasPrefix(d.URL, githubURLPrefix) {
 		return false
 	}
@@ -112,7 +106,7 @@ type repoInfo struct {
 
 // Extract populates d.Title and d.Text with repository metadata and README
 // plain text, making the content fully searchable.
-func (e *GitHubExtractor) Extract(d *document.Document) (types.ExtractorState, error) {
+func (e *GitHubRepoExtractor) Extract(d *document.Document) (types.ExtractorState, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(d.HTML))
 	if err != nil {
 		return types.ExtractorContinue, err
@@ -162,7 +156,7 @@ func (e *GitHubExtractor) Extract(d *document.Document) (types.ExtractorState, e
 
 // Preview renders a summary card (description, stars, topics, languages) and
 // the sanitized README HTML suitable for the preview panel.
-func (e *GitHubExtractor) Preview(d *document.Document) (types.PreviewResponse, types.ExtractorState, error) {
+func (e *GitHubRepoExtractor) Preview(d *document.Document) (types.PreviewResponse, types.ExtractorState, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(d.HTML))
 	if err != nil {
 		return types.PreviewResponse{}, types.ExtractorContinue, err
@@ -228,6 +222,11 @@ func parseRepoPage(doc *goquery.Document, rawHTML string) *repoInfo {
 	// Star count from the star button aria-label.
 	doc.Find("[aria-label]").Each(func(_ int, s *goquery.Selection) {
 		label, _ := s.Attr("aria-label")
+
+		// Regex to capture starred user count.
+		// Captures leading digit groups  before "users starred this repository".
+		starsRe := regexp.MustCompile(`^([\d,]+)\s+users?\s+starred\s+this\s+repository$`)
+
 		if m := starsRe.FindStringSubmatch(strings.TrimSpace(label)); m != nil {
 			info.stars = m[1]
 		}
@@ -267,7 +266,9 @@ func parseRepoPage(doc *goquery.Document, rawHTML string) *repoInfo {
 // to absolute github.com URLs (e.g. "/owner/repo/raw/..." → "https://github.com/owner/repo/raw/...").
 // Protocol-relative URLs ("//...") are left untouched.
 func resolveRelativeURLs(html string) string {
-	return relativeURLRe.ReplaceAllString(html, "${1}"+githubBase+"${2}")
+	return regexp.
+		MustCompile(`(?i)((?:src|href)=")(\/[^/"])`).
+		ReplaceAllString(html, "${1}"+githubBase+"${2}")
 }
 
 // extractReadmeHTML searches all application/json script blocks for the first
