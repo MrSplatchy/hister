@@ -26,8 +26,17 @@
   "image": null,
   "tags": ["tag1", "tag2"],
   "license": "CC-BY 4.0",
-  "author": "Your Name"
+  "author": "Your Name",
+  "diskSizeBytes": 10485760,
+  "documentCount": 500,
+  "latestUpdate": "2025-01-01"
 }`;
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
 
   function matchesQuery(d: Dataset, q: string): boolean {
     return (
@@ -363,6 +372,25 @@
                   {dataset.description}
                 </p>
 
+                {#if dataset.documentCount !== null || dataset.diskSizeBytes !== null || dataset.latestUpdate !== null}
+                  <dl
+                    class="font-inter grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-[12px] text-(--text-secondary)"
+                  >
+                    {#if dataset.documentCount !== null}
+                      <dt class="font-space font-semibold tracking-[0.5px] uppercase">Documents</dt>
+                      <dd class="m-0">{dataset.documentCount.toLocaleString()}</dd>
+                    {/if}
+                    {#if dataset.diskSizeBytes !== null}
+                      <dt class="font-space font-semibold tracking-[0.5px] uppercase">Size</dt>
+                      <dd class="m-0">{formatBytes(dataset.diskSizeBytes)}</dd>
+                    {/if}
+                    {#if dataset.latestUpdate !== null}
+                      <dt class="font-space font-semibold tracking-[0.5px] uppercase">Updated</dt>
+                      <dd class="m-0">{dataset.latestUpdate}</dd>
+                    {/if}
+                  </dl>
+                {/if}
+
                 {#if dataset.tags.length > 0}
                   <div class="flex flex-wrap gap-1.5">
                     {#each dataset.tags as tag}
@@ -492,7 +520,7 @@
         </div>
 
         <dl class="font-inter grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-sm">
-          {#each [['name', 'Display name of the dataset (string, required)'], ['description', 'Short description of the dataset contents (string, required)'], ['downloadUrl', 'Direct URL to the dataset JSON file (string, required)'], ['image', 'Optional cover image URL, or null (string | null)'], ['tags', 'List of topic tags (string[], required)'], ['license', 'License identifier, e.g. "CC-BY 4.0" (string, required)'], ['author', 'Name of the dataset author or publisher (string, required)']] as [field, desc]}
+          {#each [['name', 'Display name of the dataset (string, required)'], ['description', 'Short description of the dataset contents (string, required)'], ['downloadUrl', 'Direct URL to the Hister dataset JSON file (string, required)'], ['image', 'Optional cover image URL, or null (string | null)'], ['tags', 'List of topic tags (string[], required)'], ['license', 'License identifier, e.g. "CC-BY 4.0" (string, required)'], ['author', 'Name of the dataset author or publisher (string, required)'], ['diskSizeBytes', 'File size of the download in bytes (number, required)'], ['documentCount', 'Number of documents in the dataset (number, required)'], ['latestUpdate', 'Date the dataset was last updated, YYYY-MM-DD (string, required)']] as [field, desc]}
             <dt
               class="font-space font-semibold tracking-[0.5px] text-(--text-primary) whitespace-nowrap"
             >

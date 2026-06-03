@@ -9,12 +9,15 @@ export interface Dataset {
   tags: string[];
   license: string;
   author: string;
+  diskSizeBytes: number | null;
+  documentCount: number | null;
+  latestUpdate: string | null;
 }
 
 export async function load() {
   const datasets: Dataset[] = Object.entries(modules).map(([path, mod]) => {
     const slug = path.split('/').pop()?.replace('.json', '') ?? path;
-    const data = mod as {
+    const data = (mod as { default: unknown }).default as {
       name: string;
       description: string;
       downloadUrl: string;
@@ -22,6 +25,9 @@ export async function load() {
       tags?: string[];
       license: string;
       author: string;
+      diskSizeBytes?: number | null;
+      documentCount?: number | null;
+      latestUpdate?: string | null;
     };
     return {
       slug,
@@ -32,6 +38,9 @@ export async function load() {
       tags: data.tags ?? [],
       license: data.license,
       author: data.author,
+      diskSizeBytes: data.diskSizeBytes ?? null,
+      documentCount: data.documentCount ?? null,
+      latestUpdate: data.latestUpdate ?? null,
     };
   });
 
