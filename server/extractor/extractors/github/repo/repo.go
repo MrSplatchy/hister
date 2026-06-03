@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Package github provides an extractor for GitHub repository pages.
-package github
+package repo
 
 import (
 	"encoding/json"
@@ -12,43 +12,12 @@ import (
 
 	"github.com/asciimoo/hister/config"
 	"github.com/asciimoo/hister/server/document"
+	"github.com/asciimoo/hister/server/extractor/extractors/github"
 	"github.com/asciimoo/hister/server/sanitizer"
 	"github.com/asciimoo/hister/server/types"
 
 	"github.com/PuerkitoBio/goquery"
 )
-
-const (
-	githubBase      = "https://github.com"
-	githubURLPrefix = githubBase + "/"
-)
-
-// githubSystemPaths are top-level GitHub path segments that are never
-// repository owner namespaces.
-var githubSystemPaths = map[string]bool{
-	"settings":       true,
-	"topics":         true,
-	"sponsors":       true,
-	"features":       true,
-	"notifications":  true,
-	"explore":        true,
-	"marketplace":    true,
-	"login":          true,
-	"organizations":  true,
-	"orgs":           true,
-	"copilot":        true,
-	"github-copilot": true,
-	"new":            true,
-	"issues":         true,
-	"pulls":          true,
-	"gist":           true,
-	"about":          true,
-	"contact":        true,
-	"pricing":        true,
-	"security":       true,
-	"enterprise":     true,
-	"apps":           true,
-}
 
 // GitHubExtractor extracts project details and README content from GitHub repository pages.
 type GitHubRepoExtractor struct {
@@ -76,23 +45,9 @@ func (e *GitHubRepoExtractor) SetConfig(c *config.Extractor) error {
 	return nil
 }
 
-// Match returns true for github.com/{owner}/{repo} URLs, excluding known
-// GitHub system path prefixes.
+// Match uses IsGithubPath to determinate if this is a valid github main repo's path
 func (e *GitHubRepoExtractor) Match(d *document.Document) bool {
-	if !strings.HasPrefix(d.URL, githubURLPrefix) {
-		return false
-	}
-	path := strings.TrimPrefix(d.URL, githubURLPrefix)
-	// Strip query string and fragment.
-	if i := strings.IndexAny(path, "?#"); i >= 0 {
-		path = path[:i]
-	}
-	path = strings.TrimSuffix(path, "/")
-	parts := strings.SplitN(path, "/", 3)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return false
-	}
-	return !githubSystemPaths[strings.ToLower(parts[0])]
+	return github.IsGitHubPath(d.URL, 3) // Please do not change the 3 since it stops the split at the repo subpath
 }
 
 // repoInfo holds the extracted fields from a GitHub repository page.
@@ -268,7 +223,7 @@ func parseRepoPage(doc *goquery.Document, rawHTML string) *repoInfo {
 func resolveRelativeURLs(html string) string {
 	return regexp.
 		MustCompile(`(?i)((?:src|href)=")(\/[^/"])`).
-		ReplaceAllString(html, "${1}"+githubBase+"${2}")
+		ReplaceAllString(html, "${1}"+"https://github.com/"+"${2}")
 }
 
 // extractReadmeHTML searches all application/json script blocks for the first
