@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"net/http"
@@ -32,6 +33,7 @@ import (
 	"github.com/asciimoo/hister/server/model"
 	"github.com/asciimoo/hister/ui"
 
+	"github.com/bodgit/sevenzip"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -1103,24 +1105,63 @@ var importDataCmd = &cobra.Command{
 
 The file is read line by line; each line starting with '{' is parsed as a
 document and submitted to the running server. Content is re-processed
-server-side from the stored HTML.`,
+server-side from the stored HTML.
+
+The input file may be a plain JSON file or a 7z-compressed archive (.7z)
+containing a single JSON file.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		inputFile := args[0]
 		skip, _ := cmd.Flags().GetBool("skip-existing")
 
-		f, err := os.Open(inputFile)
-		if err != nil {
-			exit(1, "Failed to open input file: "+err.Error())
-		}
-		defer func() {
-			if err := f.Close(); err != nil {
-				log.Error().Err(err).Msg("Failed to close input file")
+		var reader io.Reader
+
+		if strings.HasSuffix(strings.ToLower(inputFile), ".7z") {
+			sz, err := sevenzip.OpenReader(inputFile)
+			if err != nil {
+				exit(1, "Failed to open 7z archive: "+err.Error())
 			}
-		}()
+			defer func() {
+				if err := sz.Close(); err != nil {
+					log.Error().Err(err).Msg("Failed to close 7z archive")
+				}
+			}()
+
+			var jsonEntry *sevenzip.File
+			for _, entry := range sz.File {
+				if strings.HasSuffix(strings.ToLower(entry.Name), ".json") {
+					jsonEntry = entry
+					break
+				}
+			}
+			if jsonEntry == nil {
+				exit(1, "No JSON file found inside 7z archive")
+			}
+			rc, err := jsonEntry.Open()
+			if err != nil {
+				exit(1, "Failed to open JSON entry in 7z archive: "+err.Error())
+			}
+			defer func() {
+				if err := rc.Close(); err != nil {
+					log.Error().Err(err).Msg("Failed to close 7z entry reader")
+				}
+			}()
+			reader = rc
+		} else {
+			f, err := os.Open(inputFile)
+			if err != nil {
+				exit(1, "Failed to open input file: "+err.Error())
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					log.Error().Err(err).Msg("Failed to close input file")
+				}
+			}()
+			reader = f
+		}
 
 		const maxLineSize = 16 * 1024 * 1024 // 16 MB covers large HTML+favicon lines
-		scanner := bufio.NewScanner(f)
+		scanner := bufio.NewScanner(reader)
 		scanner.Buffer(make([]byte, 64*1024), maxLineSize)
 
 		c := newClient(client.WithTimeout(0))
