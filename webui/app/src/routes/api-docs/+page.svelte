@@ -203,7 +203,7 @@
                               {/if}
                             </Table.Cell>
                             <Table.Cell
-                              class="font-inter text-text-brand-secondary px-3 py-2 text-sm"
+                              class="font-inter text-text-brand-secondary px-3 py-2 text-sm whitespace-normal"
                               >{arg.description}</Table.Cell
                             >
                           </Table.Row>
@@ -262,7 +262,8 @@
                             <span class="font-inter text-text-brand-muted text-xs">optional</span>
                           {/if}
                         </Table.Cell>
-                        <Table.Cell class="font-inter text-text-brand-secondary px-3 py-2 text-sm"
+                        <Table.Cell
+                          class="font-inter text-text-brand-secondary px-3 py-2 text-sm whitespace-normal"
                           >{field.description}</Table.Cell
                         >
                       </Table.Row>
