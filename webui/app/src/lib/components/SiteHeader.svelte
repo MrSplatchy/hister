@@ -22,13 +22,17 @@
   class="site-header bg-brutal-bg border-brutal-border sticky top-0 z-50 flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b-[3px] px-3 md:grid md:h-16 md:grid-cols-[12rem_auto_12rem] md:justify-stretch md:gap-4 md:px-6"
 >
   <h1 class="flex shrink-0 items-center gap-1.5 md:gap-2">
-    <img src="static/logo.png" alt="Hister logo" class="h-6 w-6 md:h-8 md:w-8" />
     <a
       data-sveltekit-reload
       href="./"
-      class="font-space text-text-brand text-lg font-extrabold tracking-[1px] uppercase no-underline hover:underline md:text-[28px] md:tracking-[2px]"
+      class="group flex items-center gap-1.5 no-underline md:gap-2"
     >
-      Hister
+      <img src="static/logo.png" alt="Hister logo" class="h-6 w-6 md:h-8 md:w-8" />
+      <span
+        class="font-space text-text-brand text-lg font-extrabold tracking-[1px] uppercase group-hover:underline md:text-[28px] md:tracking-[2px]"
+      >
+        Hister
+      </span>
     </a>
   </h1>
 
