@@ -127,7 +127,7 @@ func (e *LobstersExtractor) Preview(d *document.Document) (types.PreviewResponse
 		b.WriteString(body)
 	}
 
-	comments := doc.Find("#story_comments > ol.comments > li.comments_subtree")
+	comments := doc.Find("ol.comments > li.comments_subtree")
 	if comments.Length() > 0 {
 		b.WriteString("<h2>Comments</h2>")
 		b.WriteString(`<ol class="comments">`)

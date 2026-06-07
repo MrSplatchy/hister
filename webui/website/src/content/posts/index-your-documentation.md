@@ -1,13 +1,15 @@
 ---
-date: '2026-06-01T10:00:00+02:00'
+date: '2026-06-04T16:00:00+02:00'
 draft: false
-title: 'Hister for Developers: Index Your Entire Documentation Stack'
+title: 'Index Your Entire Documentation Stack'
 description: 'Go documentation, MDN, your project docs, Stack Overflow answers, GitHub issues. A practical guide to turning Hister into a fast offline reference for everything you work with.'
 ---
 
-Developers spend a significant portion of their working time reading documentation. Language references, library APIs, framework guides, Stack Overflow answers, internal wikis, GitHub issues. Most of this is read once and either remembered imperfectly or looked up again the next time it is needed.
+IT enthusiasts spend a significant portion of their time reading documentation. Language references, library APIs, framework guides, Stack Overflow answers, internal wikis, GitHub issues. Most of this is read once and either remembered imperfectly or looked up again the next time it is needed.
 
 Hister can index all of it. Once it is indexed, a query returns results from all your sources simultaneously, with no distinction between what came from an official API reference, a blog post, or your own notes.
+
+> We've started publishing [public datasets](/datasets) that can be imported to local Hister instances. Check them out and [suggest](https://github.com/asciimoo/hister) new datasets.
 
 ## Pre-indexing Documentation You Use Every Day
 

@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <script lang="ts">
-  import type { ResultState } from '$lib/result-resultState.svelte';
+  import type { ResultState } from '$lib/result-state.svelte';
   import { SkipRuleActions } from '@hister/components';
   import { Input } from '@hister/components/ui/input';
   import { Button } from '@hister/components/ui/button';
