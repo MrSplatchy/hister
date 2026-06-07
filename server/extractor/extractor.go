@@ -18,7 +18,7 @@ import (
 	"github.com/asciimoo/hister/config"
 	"github.com/asciimoo/hister/server/document"
 	"github.com/asciimoo/hister/server/extractor/extractors/embeddedvideo"
-	"github.com/asciimoo/hister/server/extractor/extractors/github/repo"
+	"github.com/asciimoo/hister/server/extractor/extractors/github"
 	"github.com/asciimoo/hister/server/extractor/extractors/godoc"
 	"github.com/asciimoo/hister/server/extractor/extractors/jsonld"
 	"github.com/asciimoo/hister/server/extractor/extractors/lobsters"
@@ -134,7 +134,7 @@ var extractors = []Extractor{
 	&jsonld.JSONLDExtractor{},
 	&stackoverflow.StackoverflowExtractor{},
 	&godoc.GoDocExtractor{},
-	&repo.GitHubRepoExtractor{},
+	&github.GitHubRepoExtractor{},
 	&lobsters.LobstersExtractor{},
 	&wikipedia.WikipediaExtractor{},
 	&mastodon.MastodonExtractor{},

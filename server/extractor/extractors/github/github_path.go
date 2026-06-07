@@ -31,7 +31,7 @@ var githubSystemPaths = map[string]bool{
 	"apps":           true,
 }
 
-// IsGitHubPath reports whether the given GitHub URL refers to a system path such as issues, pulls, etc.
+// IsGitHubPath check if it's a GitHub URL then check its path (if n is 5).
 func IsGitHubPath(url string, n int) bool {
 	if !strings.HasPrefix(url, githubURLPrefix) {
 		return false

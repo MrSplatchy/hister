@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Package github provides an extractor for GitHub repository pages.
-package repo
+package github
 
 import (
 	"encoding/json"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/asciimoo/hister/config"
 	"github.com/asciimoo/hister/server/document"
-	"github.com/asciimoo/hister/server/extractor/extractors/github"
 	"github.com/asciimoo/hister/server/sanitizer"
 	"github.com/asciimoo/hister/server/types"
 
@@ -24,7 +23,7 @@ type GitHubRepoExtractor struct {
 	cfg *config.Extractor
 }
 
-func (e *GitHubRepoExtractor) Name() string { return "GitHub" }
+func (e *GitHubRepoExtractor) Name() string { return "GitHub - Repo main page" }
 
 func (e *GitHubRepoExtractor) Description() string {
 	return "Extracts repository metadata (description, stars, topics, languages) and README content from GitHub project pages."
@@ -47,7 +46,7 @@ func (e *GitHubRepoExtractor) SetConfig(c *config.Extractor) error {
 
 // Match uses IsGithubPath to determinate if this is a valid github main repo's path
 func (e *GitHubRepoExtractor) Match(d *document.Document) bool {
-	return github.IsGitHubPath(d.URL, 3) // Please do not change the 3 since it stops the split at the repo subpath
+	return IsGitHubPath(d.URL, 3) // Please do not change the 3 since it stops the split at the repo subpath
 }
 
 // repoInfo holds the extracted fields from a GitHub repository page.
